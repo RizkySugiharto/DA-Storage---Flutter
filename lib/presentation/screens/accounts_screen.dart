@@ -23,7 +23,7 @@ class AccountsScreen extends StatefulWidget {
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
       name: 'Udin Surudin',
       email: 'udinsurudin12345@gmail.com',
-      role: AccountRole.administrator,
+      role: AccountRole.admin,
     ),
     Account(
       id: 1,
@@ -31,7 +31,7 @@ class AccountsScreen extends StatefulWidget {
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
       name: 'Udin Surudin',
       email: 'udinsurudin12345@gmail.com',
-      role: AccountRole.administrator,
+      role: AccountRole.admin,
     ),
     Account(
       id: 1,
@@ -39,7 +39,7 @@ class AccountsScreen extends StatefulWidget {
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
       name: 'Udin Surudin',
       email: 'udinsurudin12345@gmail.com',
-      role: AccountRole.administrator,
+      role: AccountRole.admin,
     ),
   ];
 
@@ -115,16 +115,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
               dialogContext: dialogContext,
               title: 'Sorts',
               sortSections: {
-                'Sort Order': {
-                  'Ascending': SortOrderEnum.ascending,
-                  'Descending': SortOrderEnum.descending,
-                },
-                'Sort By': {
-                  'Account ID': SortByEnum.accountId,
-                  'Name': SortByEnum.name,
-                  'Email': SortByEnum.email,
-                  'Role': SortByEnum.role,
-                },
+                'Sort Order': ['Ascending', 'Descending'],
+                'Sort By': ['Account ID', 'Name', 'Email', 'Role'],
               },
             );
           },
@@ -143,8 +135,8 @@ class _AccountsScreenState extends State<AccountsScreen> {
         children:
             {
               'All': FilterEnum.all,
-              'Administrator': FilterEnum.administrator,
-              'Cashier': FilterEnum.cashier,
+              'Admin': FilterEnum.admin,
+              'Staff': FilterEnum.staff,
             }.entries.map((entry) {
               final bool isSelected = _crrntFilters.contains(entry.value);
               final Color color =
@@ -274,8 +266,4 @@ class _AccountsScreenState extends State<AccountsScreen> {
   }
 }
 
-enum SortOrderEnum { ascending, descending }
-
-enum SortByEnum { accountId, name, email, role }
-
-enum FilterEnum { all, administrator, cashier }
+enum FilterEnum { all, admin, staff }

@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:da_cashier/data/constants/colors_constants.dart';
 import 'package:da_cashier/data/constants/placeholder_constants.dart';
 import 'package:da_cashier/data/constants/route_constants.dart';
 import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
+import 'package:da_cashier/data/providers/auth_api.dart';
+import 'package:da_cashier/data/static/account_static.dart';
 import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
 import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
 import 'package:da_cashier/presentation/widgets/header_widget.dart';
@@ -11,6 +14,7 @@ import 'package:da_cashier/presentation/widgets/input_text_widget.dart';
 import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
 import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -21,17 +25,39 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<SettingsScreen> {
-  final _nameController = TextEditingController(
-    text: PlaceholderConstants.username,
-  );
-  final _emailController = TextEditingController(
-    text: PlaceholderConstants.email,
-  );
-  final _roleController = TextEditingController(
-    text: PlaceholderConstants.role,
-  );
+  final _nameController = TextEditingController(text: '....');
+  final _emailController = TextEditingController(text: '....');
+  final _roleController = TextEditingController(text: '....');
   ImageProvider? _profileImage;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _loadAccountDetails();
+    });
+  }
+
+  void _loadAccountDetails() async {
+    final account = await AuthApi.getMe();
+
+    setState(() {
+      _profileImage = CachedNetworkImageProvider(account.avatarUrl);
+      _nameController.text = account.name;
+      _emailController.text = account.email;
+      _roleController.text = account.getRoleAsString();
+    });
+  }
+
+  void _onLogoutPressed() {
+    AuthApi.logout();
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      RouteConstants.login,
+      (_) => true,
+    );
+  }
 
   void _onImageSelected(File selectedImage) {
     setState(() {
@@ -39,24 +65,31 @@ class _ProductsScreenState extends State<SettingsScreen> {
     });
   }
 
-  void _onSaveButtonPressed() {
+  void _onSaveButtonPressed() async {
     setState(() {
       _isSaving = true;
     });
 
-    Future.delayed(Duration(seconds: 5)).then((_) {
-      if (context.mounted) {
-        AlertBannerUtils.showAlertBanner(
-          // ignore: use_build_context_synchronously
-          context,
-          message: "Successfully save your account data",
-          alertType: AlertBannerType.success,
-        );
-      }
+    final newAccount = await AuthApi.putMe(
+      name: _nameController.text,
+      email: _emailController.text,
+    );
 
-      setState(() {
-        _isSaving = false;
-      });
+    if (context.mounted) {
+      AlertBannerUtils.showAlertBanner(
+        // ignore: use_build_context_synchronously
+        context,
+        message: "Successfully save your account data",
+        alertType: AlertBannerType.success,
+      );
+    }
+
+    setState(() {
+      _profileImage = CachedNetworkImageProvider(newAccount.avatarUrl);
+      _nameController.text = newAccount.name;
+      _emailController.text = newAccount.email;
+      _roleController.text = newAccount.getRoleAsString();
+      _isSaving = false;
     });
   }
 
@@ -94,24 +127,28 @@ class _ProductsScreenState extends State<SettingsScreen> {
                           child: Column(
                             spacing: 16,
                             children: [
-                              _buildSettingsItem(
-                                icon: Icons.people,
-                                title: 'Accounts Management',
-                                onTap:
-                                    () => Navigator.pushNamed(
-                                      context,
-                                      RouteConstants.accounts,
+                              ...(AccountStatic.isAdmin()
+                                  ? [
+                                    _buildSettingsItem(
+                                      icon: Icons.people,
+                                      title: 'Accounts Management',
+                                      onTap:
+                                          () => Navigator.pushNamed(
+                                            context,
+                                            RouteConstants.accounts,
+                                          ),
                                     ),
-                              ),
-                              _buildSettingsItem(
-                                icon: Icons.category,
-                                title: 'Categories Management',
-                                onTap:
-                                    () => Navigator.pushNamed(
-                                      context,
-                                      RouteConstants.categories,
+                                    _buildSettingsItem(
+                                      icon: Icons.category,
+                                      title: 'Categories Management',
+                                      onTap:
+                                          () => Navigator.pushNamed(
+                                            context,
+                                            RouteConstants.categories,
+                                          ),
                                     ),
-                              ),
+                                  ]
+                                  : []),
                               _buildSettingsItem(
                                 icon: Icons.notifications,
                                 title: 'Notification Settings',
@@ -253,7 +290,7 @@ class _ProductsScreenState extends State<SettingsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 42),
       child: GestureDetector(
-        onTap: () {},
+        onTap: _onLogoutPressed,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

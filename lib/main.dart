@@ -12,7 +12,7 @@ import 'package:da_cashier/presentation/screens/create_transaction_screen.dart';
 import 'package:da_cashier/presentation/screens/edit_account_screen.dart';
 import 'package:da_cashier/presentation/screens/edit_category_screen.dart';
 import 'package:da_cashier/presentation/screens/edit_product_screen.dart';
-// import 'package:da_cashier/presentation/screens/history_screen.dart';
+import 'package:da_cashier/presentation/screens/history_screen.dart';
 import 'package:da_cashier/presentation/screens/home_screen.dart';
 import 'package:da_cashier/presentation/screens/login_screen.dart';
 import 'package:da_cashier/presentation/screens/notification_settings_screen.dart';
@@ -99,7 +99,7 @@ class MyApp extends StatelessWidget {
         RouteConstants.products: (context) => ProductsScreen(),
         RouteConstants.addProduct: (context) => AddProductScreen(),
         RouteConstants.editProduct: (context) => EditProductScreen(),
-        // RouteConstants.history: (context) => HistoryScreen(),
+        RouteConstants.history: (context) => HistoryScreen(),
         RouteConstants.reports: (context) => ReportsScreen(),
         RouteConstants.createTransaction:
             (context) => CreateTransactionScreen(),

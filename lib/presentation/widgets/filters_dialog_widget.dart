@@ -18,6 +18,7 @@ class FiltersDialogWidget extends StatefulWidget {
   final BuildContext dialogContext;
   final String title;
   final Map<FilterSectionTitle, FilterDialogSectionData> filterSections;
+  final Map<FilterSectionTitle, FilterSet>? currentFilters;
   final void Function()? onDialogClosed;
   final void Function(bool, FilterItem?, Map<FilterSectionTitle, FilterSet>)?
   onFilterSelected;
@@ -27,6 +28,7 @@ class FiltersDialogWidget extends StatefulWidget {
     required this.dialogContext,
     required this.title,
     required this.filterSections,
+    this.currentFilters,
     this.onDialogClosed,
     this.onFilterSelected,
   });
@@ -36,9 +38,9 @@ class FiltersDialogWidget extends StatefulWidget {
 }
 
 class _ChipsDialogWidgetState extends State<FiltersDialogWidget> {
-  late final Map<FilterSectionTitle, FilterSet> _crrntFilters = widget
-      .filterSections
-      .map(
+  late final Map<FilterSectionTitle, FilterSet> _crrntFilters =
+      widget.currentFilters ??
+      widget.filterSections.map(
         (filterSectionTitle, _) => MapEntry(filterSectionTitle, <FilterItem>{}),
       );
 

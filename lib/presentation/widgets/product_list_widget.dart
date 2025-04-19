@@ -1,7 +1,10 @@
 import 'package:da_cashier/data/constants/colors_constants.dart';
 import 'package:da_cashier/data/constants/route_constants.dart';
+import 'package:da_cashier/data/models/account_model.dart';
 import 'package:da_cashier/data/models/product_model.dart';
 import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
+import 'package:da_cashier/data/providers/products_api.dart';
+import 'package:da_cashier/data/static/account_static.dart';
 import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
 import 'package:da_cashier/presentation/widgets/more_button_widget.dart';
 import 'package:flutter/material.dart';
@@ -27,21 +30,46 @@ class ProductListWidget extends StatefulWidget {
 class _ProductListWidgetState extends State<ProductListWidget> {
   late final _selectedProducts = <Product>{};
 
+  void _onDeletePressed(int productId) async {
+    final isSuccess = await ProductsApi.delete(productId);
+
+    if (isSuccess) {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Successfully delete the product. Refresh to see the changes.",
+        alertType: AlertBannerType.success,
+      );
+    } else {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Failed to delete the product",
+        alertType: AlertBannerType.error,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      scrollDirection: Axis.vertical,
-      shrinkWrap: true,
-      padding: const EdgeInsets.all(16),
-      itemCount: widget.products.length,
-      itemBuilder: (context, index) {
-        final product = widget.products[index];
-        return Column(
-          children: [_buildProductItem(product), const SizedBox(height: 16)],
-        );
-      },
-    );
+    if (widget.products.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else {
+      return ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(16),
+        itemCount: widget.products.length,
+        itemBuilder: (context, index) {
+          final product = widget.products[index];
+          return Column(
+            children: [_buildProductItem(product), const SizedBox(height: 16)],
+          );
+        },
+      );
+    }
   }
 
   Widget _buildProductItem(Product product) {
@@ -119,7 +147,7 @@ class _ProductListWidgetState extends State<ProductListWidget> {
                       ),
                     ],
                   ),
-                  !widget.isSelectable
+                  AccountStatic.isAdmin() && !widget.isSelectable
                       ? MoreButtonWidget(
                         enableBarcodeOptions: true,
                         onEditPressed: () {
@@ -129,13 +157,7 @@ class _ProductListWidgetState extends State<ProductListWidget> {
                             arguments: product.id,
                           );
                         },
-                        onDeletePressed: () {
-                          AlertBannerUtils.showAlertBanner(
-                            context,
-                            message: "Successfully delete the product",
-                            alertType: AlertBannerType.success,
-                          );
-                        },
+                        onDeletePressed: () => _onDeletePressed(product.id),
                       )
                       : const SizedBox(),
                 ],

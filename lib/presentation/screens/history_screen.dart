@@ -2,6 +2,7 @@ import 'package:da_cashier/data/constants/colors_constants.dart';
 import 'package:da_cashier/data/constants/placeholder_constants.dart';
 import 'package:da_cashier/data/constants/route_constants.dart';
 import 'package:da_cashier/data/models/transaction_model.dart';
+import 'package:da_cashier/data/providers/transactions_api.dart';
 import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
 import 'package:da_cashier/presentation/widgets/header_widget.dart';
 import 'package:da_cashier/presentation/widgets/input_select_widget.dart';
@@ -10,6 +11,7 @@ import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
 import 'package:da_cashier/presentation/widgets/sorts_dialog_widget.dart';
 import 'package:da_cashier/presentation/widgets/transaction_card_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -20,55 +22,72 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  String _selectedDateRange = _dateRangeOptions.first;
-  String _selectedStatus = _statusOptions.first;
+  String _selectedDateRange = _dateRangeOptions[1];
+  String _selectedType = _typeOptions.first;
+  Map<String, Set<String>> _crrntSortings = {};
 
   static const List<String> _dateRangeOptions = [
-    'Today',
-    'Last Week',
-    'Last Month',
-    'Last 3 Months',
-    'Last 6 Months',
-    'Last Year',
-    'Last 2 Years',
-    'Last 3 Years',
+    '1 Month',
+    '3 Months',
+    '6 Months',
+    '1 Year',
+    '2 Years',
+    '3 Years',
   ];
-  static const List<String> _statusOptions = [
-    'All Status',
-    'Completed',
-    'Cancelled',
+  static const List<String> _typeOptions = [
+    'All Types',
+    'Purchase',
+    'Sale',
+    'Return',
   ];
 
-  final Map<String, List<Transaction>> _transactionSections = {
-    'February 2024': [
-      Transaction(
-        id: 1,
-        totalCost: 56_000,
-        status: TransactionStatus.completed,
-        timestamp: DateTime.now(),
-      ),
-      Transaction(
-        id: 1,
-        totalCost: 56_000,
-        status: TransactionStatus.completed,
-        timestamp: DateTime.now(),
-      ),
-    ],
-    'January 2024': [
-      Transaction(
-        id: 1,
-        totalCost: 56_000,
-        status: TransactionStatus.canceled,
-        timestamp: DateTime.now(),
-      ),
-      Transaction(
-        id: 1,
-        totalCost: 56_000,
-        status: TransactionStatus.completed,
-        timestamp: DateTime.now(),
-      ),
-    ],
-  };
+  List<Transaction2> _transactions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _loadTransactions();
+    });
+  }
+
+  void _loadTransactions() async {
+    _transactions = await TransactionsApi.getAllTransactions(
+      filterDateRange:
+          {
+            '1 Month': 1,
+            '3 Months': 3,
+            '6 Months': 6,
+            '1 Year': 12,
+            '2 Years': 24,
+            '3 Years': 36,
+          }[_selectedDateRange],
+      filterType:
+          {
+            'All Types': 'all',
+            'Purchase': 'purchase',
+            'Sale': 'sale',
+            'Return': 'return',
+          }[_selectedType],
+      sortBy:
+          (_crrntSortings['Sort By']?.isNotEmpty ?? false)
+              ? {
+                'Transaction ID': 'id',
+                'Type': 'type',
+                'Total Cost': 'total_cost',
+                'Created Date': 'created_at',
+              }[_crrntSortings['Sort By']?.first]
+              : '',
+      sortOrder:
+          (_crrntSortings['Sort Order']?.isNotEmpty ?? false)
+              ? {
+                'Ascending': 'asc',
+                'Descending': 'desc',
+              }[_crrntSortings['Sort Order']?.first]
+              : '',
+    );
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,17 +142,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
             return SortsDialogWidget(
               dialogContext: dialogContext,
               title: 'Sorts',
+              currentSortings:
+                  _crrntSortings.isNotEmpty ? _crrntSortings : null,
               sortSections: {
-                'Sort Order': {
-                  'Ascending': SortOrderEnum.ascending,
-                  'Descending': SortOrderEnum.descending,
-                },
-                'Sort By': {
-                  'Transaction ID': SortByEnum.transactionId,
-                  'Total Price': SortByEnum.totalPrice,
-                  'Date Time': SortByEnum.dateTime,
-                  'Status': SortByEnum.status,
-                },
+                'Sort Order': ['Ascending', 'Descending'],
+                'Sort By': [
+                  'Transaction ID',
+                  'Type',
+                  'Total Cost',
+                  'Created Date',
+                ],
+              },
+              onSortSelected: (selected, value, crrnt) {
+                _crrntSortings = crrnt;
+              },
+              onDialogClosed: () {
+                _loadTransactions();
               },
             );
           },
@@ -159,33 +183,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
         spacing: 18,
         crossAxisAlignment: CrossAxisAlignment.start,
         children:
-            _transactionSections.entries.map((section) {
-              return Column(
-                spacing: 14,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    section.key,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: ColorsConstants.black,
-                    ),
-                  ),
-                  Column(
-                    spacing: 14,
-                    children:
-                        section.value
-                            .map(
-                              (transaction) => TransactionCardWidget(
-                                transaction: transaction,
-                              ),
-                            )
-                            .toList(),
-                  ),
-                ],
-              );
-            }).toList(),
+            _transactions
+                .map((item) => TransactionCardWidget(transaction: item))
+                .toList(),
       ),
     );
   }
@@ -218,6 +218,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   setState(() {
                     _selectedDateRange = selected;
                   });
+                  _loadTransactions();
                 }
               },
             ),
@@ -225,13 +226,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
             InputSelectWidget(
               label: 'Status',
               labelStyle: inputSelectLabelStyle,
-              value: _selectedStatus,
-              options: _statusOptions,
+              value: _selectedType,
+              options: _typeOptions,
               onChanged: (String? selected) {
                 if (selected != null) {
                   setState(() {
-                    _selectedStatus = selected;
+                    _selectedType = selected;
                   });
+                  _loadTransactions();
                 }
               },
             ),

@@ -42,42 +42,47 @@ class AuthApi {
 
   static Future<Account> getMe() async {
     final response = await ApiUtils.getClient().get('/auth/me');
+    final data = response.response?.data;
 
     if (response.statusCode == HttpStatus.ok) {
       return Account(
-        id: response.data['id'],
-        avatarUrl: response.data['avatar_url'],
-        email: response.data['email'],
-        name: response.data['name'],
-        role: response.data['role'],
+        id: data['id'],
+        avatarUrl: data['avatar_url'],
+        email: data['email'],
+        name: data['name'],
+        role: Account.getRoleByString(data['role']),
       );
     } else {
       return Account.none;
     }
   }
 
-  static Future<Account> putMe(
-    File avatarFile,
-    String name,
-    String email,
-  ) async {
+  static Future<Account> putMe({
+    File? avatarFile,
+    required String name,
+    required String email,
+  }) async {
     final formData = FormData.fromMap({
-      'avatar_file': await MultipartFile.fromFile(
-        avatarFile.path,
-        filename: avatarFile.name,
-      ),
+      'avatar_file':
+          avatarFile != null
+              ? await MultipartFile.fromFile(
+                avatarFile.path,
+                filename: avatarFile.name,
+              )
+              : null,
       'name': name,
       'email': email,
     });
     final response = await ApiUtils.getClient().put('/auth/me', data: formData);
+    final resData = response.response?.data as Map<String, dynamic>;
 
     if (response.statusCode == HttpStatus.ok) {
       return Account(
-        id: response.data['id'],
-        avatarUrl: response.data['avatar_url'],
-        email: response.data['email'],
-        name: response.data['name'],
-        role: response.data['role'],
+        id: resData['id'],
+        avatarUrl: resData['avatar_url'],
+        email: resData['email'],
+        name: resData['name'],
+        role: Account.getRoleByString(resData['role']),
       );
     } else {
       return Account.none;

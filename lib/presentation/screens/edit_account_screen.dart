@@ -34,7 +34,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
     name: 'Udin Surudin',
     email: 'udinsurudin12345@gmail.com',
-    role: AccountRole.administrator,
+    role: AccountRole.admin,
   );
 
   void _onAvatarSelected(File image) {

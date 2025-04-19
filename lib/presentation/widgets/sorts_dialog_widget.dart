@@ -2,22 +2,24 @@ import 'package:da_cashier/data/constants/colors_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-typedef SortSectionData = Map<String, Enum>;
-typedef SortSet = Set<Enum>;
-typedef SortSectionList = String;
+typedef SortSectionData = List<String>;
+typedef SortSet = Set<String>;
+typedef SortSectionTitle = String;
 
 class SortsDialogWidget extends StatefulWidget {
   final BuildContext dialogContext;
   final String title;
-  final Map<SortSectionList, SortSectionData> sortSections;
+  final Map<SortSectionTitle, SortSectionData> sortSections;
+  final Map<SortSectionTitle, SortSet>? currentSortings;
   final void Function()? onDialogClosed;
-  final void Function(bool, Enum?, Map<String, SortSet>)? onSortSelected;
+  final void Function(bool, String?, Map<String, SortSet>)? onSortSelected;
 
   const SortsDialogWidget({
     super.key,
     required this.dialogContext,
     required this.title,
     required this.sortSections,
+    this.currentSortings,
     this.onDialogClosed,
     this.onSortSelected,
   });
@@ -27,10 +29,11 @@ class SortsDialogWidget extends StatefulWidget {
 }
 
 class _ChipsDialogWidgetState extends State<SortsDialogWidget> {
-  late final Map<SortSectionList, SortSet> _crrntSortings = widget.sortSections
-      .map(
+  late final Map<SortSectionTitle, SortSet> _crrntSortings =
+      widget.currentSortings ??
+      widget.sortSections.map(
         (sortSectionTitle, sortSectionData) =>
-            MapEntry(sortSectionTitle, <Enum>{sortSectionData.values.first}),
+            MapEntry(sortSectionTitle, <String>{sortSectionData.first}),
       );
 
   @override
@@ -103,17 +106,12 @@ class _ChipsDialogWidgetState extends State<SortsDialogWidget> {
                               spacing: 10,
                               runSpacing: 10,
                               children:
-                                  widget.sortSections[sortSectionTitle]!.keys.map((
-                                    String sortName,
+                                  widget.sortSections[sortSectionTitle]!.map((
+                                    String sortItem,
                                   ) {
-                                    final sortEnum =
-                                        widget
-                                            .sortSections[sortSectionTitle]![sortName];
-
                                     return _buildSortChip(
                                       sortSectionTitle,
-                                      sortName,
-                                      sortEnum!,
+                                      sortItem,
                                     );
                                   }).toList(),
                             ),
@@ -129,13 +127,9 @@ class _ChipsDialogWidgetState extends State<SortsDialogWidget> {
     );
   }
 
-  Widget _buildSortChip(
-    SortSectionList sortSectionTitle,
-    String sortName,
-    Enum sortEnum,
-  ) {
+  Widget _buildSortChip(SortSectionTitle sortSectionTitle, String sortItem) {
     final bool isSelected =
-        _crrntSortings[sortSectionTitle]?.contains(sortEnum) ?? false;
+        _crrntSortings[sortSectionTitle]?.contains(sortItem) ?? false;
     final Color color = _getColorBySelected(isSelected);
 
     return ChoiceChip(
@@ -153,7 +147,7 @@ class _ChipsDialogWidgetState extends State<SortsDialogWidget> {
       backgroundColor: ColorsConstants.white,
       selectedColor: ColorsConstants.blue.withValues(alpha: 0.2),
       label: Text(
-        sortName,
+        sortItem,
         style: GoogleFonts.poppins(
           fontSize: 16,
           fontWeight: FontWeight.w400,
@@ -164,11 +158,11 @@ class _ChipsDialogWidgetState extends State<SortsDialogWidget> {
         setState(() {
           if (selected) {
             _crrntSortings[sortSectionTitle]?.clear();
-            _crrntSortings[sortSectionTitle]?.add(sortEnum);
+            _crrntSortings[sortSectionTitle]?.add(sortItem);
           }
 
           if (widget.onSortSelected != null) {
-            widget.onSortSelected!(selected, sortEnum, _crrntSortings);
+            widget.onSortSelected!(selected, sortItem, _crrntSortings);
           }
         });
       },

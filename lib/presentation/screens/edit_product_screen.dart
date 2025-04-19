@@ -3,6 +3,8 @@ import 'package:da_cashier/data/constants/placeholder_constants.dart';
 import 'package:da_cashier/data/models/category_model.dart';
 import 'package:da_cashier/data/models/product_model.dart';
 import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
+import 'package:da_cashier/data/providers/categories_api.dart';
+import 'package:da_cashier/data/providers/products_api.dart';
 import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
 import 'package:da_cashier/presentation/widgets/confirmation_buttons_widget.dart';
 import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
@@ -13,7 +15,6 @@ import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
 import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -25,30 +26,47 @@ class EditProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<EditProductScreen> {
   final numFormat = NumberFormat.decimalPattern('ID-id');
-  late final _nameController = TextEditingController(text: product.name);
+  late final _nameController = TextEditingController(text: _product.name);
   late final _priceController = TextEditingController(
-    text: numFormat.format(product.price),
+    text: numFormat.format(_product.price),
   );
-  late final _addedStockController = TextEditingController(text: '0');
-  late final _newStockController = TextEditingController(
-    text: numFormat.format(product.stock),
-  );
-  late String? _selectedCategory = product.category.name;
-  int _recommendedNewStock = 5;
+  late final _stockController = TextEditingController(text: '0');
+  late String? _selectedCategory = _product.category.name;
+  List<Category> _availableCategories = [];
 
-  final product = Product(
-    id: 1,
-    name: 'Coffe Cup',
-    category: Category(id: 1, name: 'Groceries & Food Items', description: ''),
-    price: 5000,
-    stock: 50,
-    lastUpdated: DateTime(2025, 3, 21),
-  );
+  Product _product = Product.none;
 
-  void _onConfirmPressed(BuildContext context) {
+  void _onConfirmPressed(BuildContext context) async {
+    if (_nameController.text.isEmpty ||
+        (_selectedCategory?.isEmpty ?? false) ||
+        _priceController.text.isEmpty ||
+        _stockController.text.isEmpty) {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "All fields are required to fill",
+        alertType: AlertBannerType.error,
+      );
+    }
+
+    final newProduct = await ProductsApi.put(
+      id: _product.id,
+      name: _nameController.text,
+      categoryId: _getCategoryByName(_selectedCategory ?? '').id,
+      price: int.parse(_priceController.text.replaceAll('.', '')),
+      stock: int.parse(_stockController.text.replaceAll('.', '')),
+    );
+
+    if (newProduct != Product.none) {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Failed to edit the product",
+        alertType: AlertBannerType.error,
+      );
+    }
+
     AlertBannerUtils.popWithAlertBanner(
       context,
-      message: "Successfully edit the product",
+      message: "Successfully edit the product. Refresh to see the changes.",
       alertType: AlertBannerType.success,
     );
   }
@@ -57,9 +75,29 @@ class _AddProductScreenState extends State<EditProductScreen> {
     Navigator.pop(context);
   }
 
-  void _fetchProduct(int productId) {}
+  void _fetchProduct(int productId) async {
+    _product = await ProductsApi.getSingleProduct(productId);
+    setState(() {
+      _nameController.text = _product.name;
+      _priceController.text = numFormat.format(_product.price);
+      _stockController.text = numFormat.format(_product.stock);
+      _selectedCategory = _product.category.name;
+    });
+  }
 
-  void _fetchRecommendedNewStock(int productId) {}
+  void _fetchAllCategories() async {
+    _availableCategories = await CategoriesApi.getAllCategories();
+    setState(() {});
+  }
+
+  Category _getCategoryByName(String name) {
+    for (Category category in _availableCategories) {
+      if (category.name == name) {
+        return category;
+      }
+    }
+    return Category.none;
+  }
 
   @override
   void initState() {
@@ -67,7 +105,7 @@ class _AddProductScreenState extends State<EditProductScreen> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       final productId = ModalRoute.of(context)!.settings.arguments as int;
       _fetchProduct(productId);
-      _fetchRecommendedNewStock(productId);
+      _fetchAllCategories();
     });
   }
 
@@ -133,7 +171,7 @@ class _AddProductScreenState extends State<EditProductScreen> {
         children: [
           InputTextWidget(
             label: 'Product ID',
-            textController: TextEditingController(text: product.id.toString()),
+            textController: TextEditingController(text: _product.id.toString()),
             readOnly: true,
             hint: "Product's ID",
           ),
@@ -146,7 +184,7 @@ class _AddProductScreenState extends State<EditProductScreen> {
           const SizedBox(height: 24),
           InputSelectWidget(
             label: 'Category',
-            options: ['a', 'b', 'Groceries & Food Items'],
+            options: _availableCategories.map((item) => item.name).toList(),
             hint: 'Choose one category',
             value: _selectedCategory,
             onChanged: (selected) {
@@ -166,56 +204,11 @@ class _AddProductScreenState extends State<EditProductScreen> {
           ),
           const SizedBox(height: 24),
           InputTextWidget(
-            label: 'Added Stock',
-            textController: _addedStockController,
+            label: 'Stock',
+            textController: _stockController,
             enablePriceFormat: true,
             keyboardType: TextInputType.number,
             hint: '100.000',
-            onChanged: (value) {
-              if (value == null || value.isEmpty) return;
-
-              final newStock =
-                  product.stock + int.parse(value.replaceAll('.', ''));
-              _newStockController.value = TextEditingValue(
-                text: numFormat.format(newStock),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          InputTextWidget(
-            label: 'New Stock',
-            textController: _newStockController,
-            enablePriceFormat: true,
-            keyboardType: TextInputType.number,
-            hint: '100.000',
-            onChanged: (value) {
-              if (value == null || value.isEmpty) return;
-
-              final addedStock =
-                  int.parse(value.replaceAll('.', '')) - product.stock;
-              _addedStockController.value = TextEditingValue(
-                text: numFormat.format(addedStock),
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          Text.rich(
-            TextSpan(
-              text: 'Recommended New Stock:  ',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-              ),
-              children: [
-                TextSpan(
-                  text: _recommendedNewStock.toString(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
           ),
           const SizedBox(height: 20),
         ],

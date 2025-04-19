@@ -181,17 +181,14 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
               dialogContext: dialogContext,
               title: 'Sorts',
               sortSections: {
-                'Sort Order': {
-                  'Ascending': SortOrderEnum.ascending,
-                  'Descending': SortOrderEnum.descending,
-                },
-                'Sort By': {
-                  'Product ID': SortByEnum.productId,
-                  'Name': SortByEnum.name,
-                  'Price': SortByEnum.price,
-                  'Stock': SortByEnum.stock,
-                  'Updated Date': SortByEnum.updatedDate,
-                },
+                'Sort Order': ['Ascending', 'Descending'],
+                'Sort By': [
+                  'Product ID',
+                  'Name',
+                  'Price',
+                  'Stock',
+                  'Updated Date',
+                ],
               },
             );
           },

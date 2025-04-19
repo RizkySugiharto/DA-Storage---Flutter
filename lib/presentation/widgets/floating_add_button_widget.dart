@@ -1,4 +1,5 @@
 import 'package:da_cashier/data/constants/route_constants.dart';
+import 'package:da_cashier/data/static/account_static.dart';
 import 'package:flutter/material.dart';
 import 'package:da_cashier/data/constants/colors_constants.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -75,30 +76,40 @@ class _FloatingAddButtonWidgetState extends State<FloatingAddButtonWidget>
                       icon: Icons.shopping_cart,
                       label: 'Create Transaction',
                     ),
-                    _buildAddItem(
-                      onPressed: () {
-                        Navigator.pushNamed(context, RouteConstants.addProduct);
-                      },
-                      icon: Icons.inventory_2,
-                      label: 'Add Product',
-                    ),
-                    _buildAddItem(
-                      onPressed: () {
-                        Navigator.pushNamed(context, RouteConstants.addAccount);
-                      },
-                      icon: Icons.account_box,
-                      label: 'Add Account',
-                    ),
-                    _buildAddItem(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          RouteConstants.addCategory,
-                        );
-                      },
-                      icon: Icons.category,
-                      label: 'Add Category',
-                    ),
+                    ...(AccountStatic.isAdmin()
+                        ? [
+                          _buildAddItem(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                RouteConstants.addProduct,
+                              );
+                            },
+                            icon: Icons.inventory_2,
+                            label: 'Add Product',
+                          ),
+                          _buildAddItem(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                RouteConstants.addAccount,
+                              );
+                            },
+                            icon: Icons.account_box,
+                            label: 'Add Account',
+                          ),
+                          _buildAddItem(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                RouteConstants.addCategory,
+                              );
+                            },
+                            icon: Icons.category,
+                            label: 'Add Category',
+                          ),
+                        ]
+                        : []),
                   ],
                 ),
               ),

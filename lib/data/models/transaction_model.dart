@@ -30,6 +30,15 @@ class Transaction2 {
   final TransactionType type;
   final double totalCost;
   final DateTime createdAt;
+  static final none = Transaction2(
+    id: 0,
+    accountId: 0,
+    customerId: 0,
+    supplierId: 0,
+    type: TransactionType.return_,
+    totalCost: 0,
+    createdAt: DateTime(0),
+  );
 
   Transaction2({
     required this.id,
@@ -44,12 +53,12 @@ class Transaction2 {
   static Transaction2 fromJSON(Map<String, dynamic> json) {
     return Transaction2(
       id: json['id'] ?? 0,
-      accountId: json['accountId'] ?? 0,
-      supplierId: json['supplierId'] ?? 0,
-      customerId: json['customerId'] ?? 0,
+      accountId: json['account_id'] ?? 0,
+      supplierId: json['supplier_id'] ?? 0,
+      customerId: json['customer_id'] ?? 0,
       type: Transaction2.getTypeFromString(json['type'] ?? ''),
-      totalCost: double.tryParse(json['totalCost']) ?? 0,
-      createdAt: DateTime.parse(json['createdAt'] ?? ''),
+      totalCost: json['total_cost'].toDouble() ?? 0,
+      createdAt: DateTime.parse(json['created_at'] ?? '1111-11-11'),
     );
   }
 
@@ -72,17 +81,17 @@ class Transaction2 {
 
   Color? getForegroundColor() {
     return {
-      TransactionType.purchase: Colors.green,
-      TransactionType.sale: Colors.red,
+      TransactionType.purchase: Colors.red,
+      TransactionType.sale: Colors.green,
       TransactionType.return_: Colors.blue,
     }[type];
   }
 
   Color? getBackgroundColor() {
     return {
-      TransactionType.purchase: Colors.lightGreenAccent,
-      TransactionType.sale: Colors.redAccent.withValues(alpha: 0.6),
-      TransactionType.return_: Colors.lightBlueAccent,
+      TransactionType.purchase: Colors.redAccent.withValues(alpha: 0.2),
+      TransactionType.sale: Colors.lightGreenAccent.withValues(alpha: 0.4),
+      TransactionType.return_: Colors.lightBlueAccent.withValues(alpha: 0.2),
     }[type];
   }
 }

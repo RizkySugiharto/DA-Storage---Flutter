@@ -12,7 +12,7 @@ class TransactionCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat.jm();
+    final dateFormat = DateFormat('dd/MM/yyyy');
     final numFormat = NumberFormat.decimalPattern('ID-id');
 
     return InkWell(

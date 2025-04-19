@@ -12,25 +12,40 @@ class Account {
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
     required this.name,
     required this.email,
-    this.role = AccountRole.cashier,
+    this.role = AccountRole.staff,
   });
 
   String get firstName {
     return name.split(' ').first;
   }
 
+  static Account fromJSON(Map<String, dynamic> json) {
+    return Account(
+      id: json['id'] ?? 0,
+      avatarUrl: json['avatar_url'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      role: getRoleByString(json['role']),
+    );
+  }
+
   String getRoleAsString() {
     switch (role) {
-      case AccountRole.cashier:
-        return 'Cashier';
-      case AccountRole.administrator:
-        return 'Administrator';
+      case AccountRole.admin:
+        return 'Admin';
+      case AccountRole.staff:
+        return 'Staff';
     }
   }
 
   static List<String> getAllRoleAsString() {
     return ['Cashier', 'Administrator'];
   }
+
+  static AccountRole getRoleByString(String role) {
+    return {'admin': AccountRole.admin, 'staff': AccountRole.staff}[role] ??
+        AccountRole.staff;
+  }
 }
 
-enum AccountRole { cashier, administrator }
+enum AccountRole { admin, staff }

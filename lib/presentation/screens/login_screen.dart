@@ -1,7 +1,9 @@
 import 'package:da_cashier/data/constants/app_constants.dart';
+import 'package:da_cashier/data/constants/placeholder_constants.dart';
 import 'package:da_cashier/data/constants/route_constants.dart';
 import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
 import 'package:da_cashier/data/providers/auth_api.dart';
+import 'package:da_cashier/data/static/account_static.dart';
 import 'package:da_cashier/data/utils/api_utils.dart';
 import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +35,14 @@ class _LoginScreenState extends State<LoginScreen> {
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       await ApiUtils.loadClientToken();
       if (context.mounted && ApiUtils.isLoggedIn()) {
+        final account = await AuthApi.getMe();
+        PlaceholderConstants.username = account.name;
+        PlaceholderConstants.avatarUrl = account.avatarUrl;
+
+        AccountStatic.name = account.name;
+        AccountStatic.avatarUrl = account.avatarUrl;
+        AccountStatic.role = account.role;
+
         // ignore: use_build_context_synchronously
         Navigator.pushNamed(context, RouteConstants.home);
       }

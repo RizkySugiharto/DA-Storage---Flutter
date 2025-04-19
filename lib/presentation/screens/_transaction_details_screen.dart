@@ -3,11 +3,13 @@ import 'package:da_cashier/data/constants/placeholder_constants.dart';
 import 'package:da_cashier/data/models/account_model.dart';
 import 'package:da_cashier/data/models/purchased_product_model.dart';
 import 'package:da_cashier/data/models/transaction_model.dart';
+import 'package:da_cashier/data/providers/accounts_api.dart';
 import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
 import 'package:da_cashier/presentation/widgets/header_widget.dart';
 import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
 import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -25,44 +27,35 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   Account? _account;
   List<PurchasedProduct>? _purchasedProducts;
 
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      fetchTransaction();
+      fetchAccount();
+      fetchSupplier();
+      fetchCustomer();
+      fetchTransactionItems();
+      fetchStockLogs();
+    });
+  }
+
   void fetchTransaction() {
     _transaction = ModalRoute.of(context)!.settings.arguments as Transaction2;
   }
 
-  void fetchAccount() {
-    _account = Account(
-      id: 12481924813718271,
-      avatarUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
-      name: 'Udin Surudin',
-      email: 'udinsurudin12345@gmail.com',
-      role: AccountRole.staff,
-    );
+  void fetchAccount() async {
+    _account = await AccountsApi.getSingleAccount(_transaction!.accountId);
+    setState(() {});
   }
 
-  void fetchPurchasedProducts() {
-    _purchasedProducts = [
-      PurchasedProduct(
-        productId: 1,
-        name: 'Coffe Cup',
-        price: 154_000,
-        amount: 2,
-      ),
-      PurchasedProduct(
-        productId: 2,
-        name: 'Coffe Cup',
-        price: 154_000,
-        amount: 10,
-      ),
-    ];
-  }
+  void fetchSupplier() async {}
+  void fetchCustomer() async {}
+  void fetchTransactionItems() async {}
+  void fetchStockLogs() async {}
 
   @override
   Widget build(BuildContext context) {
-    fetchTransaction();
-    fetchAccount();
-    fetchPurchasedProducts();
-
     return Scaffold(
       backgroundColor: ColorsConstants.lightGrey,
       body: SafeArea(
@@ -190,14 +183,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           const SizedBox(height: 4),
           _buildTextItem(
             Text(
-              'Created',
+              'Datetime',
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
             ),
             Text(
-              dateFormat.format(_transaction?.createdAt ?? DateTime.now()),
+              dateFormat.format(_transaction?.timestamp ?? DateTime.now()),
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w300,
@@ -207,18 +200,21 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           const SizedBox(height: 4),
           _buildTextItem(
             Text(
-              'Type',
+              'Status',
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
             ),
             Text(
-              _transaction?.getTypeAsString() ?? 'none',
+              _transaction?.getStatusAsString() ?? 'none',
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
-                color: _transaction?.getForegroundColor(),
+                color:
+                    _transaction?.status == TransactionStatus.completed
+                        ? const Color(0xFF047857)
+                        : const Color(0xFF780404),
               ),
             ),
           ),

@@ -106,15 +106,8 @@ class _AccountsScreenState extends State<CategoriesScreen> {
               dialogContext: dialogContext,
               title: 'Sorts',
               sortSections: {
-                'Sort Order': {
-                  'Ascending': SortOrderEnum.ascending,
-                  'Descending': SortOrderEnum.descending,
-                },
-                'Sort By': {
-                  'Category ID': SortByEnum.categoryId,
-                  'Name': SortByEnum.name,
-                  'Description': SortByEnum.description,
-                },
+                'Sort Order': ['Ascending', 'Descending'],
+                'Sort By': ['Category ID', 'Name', 'Description'],
               },
             );
           },

@@ -25,6 +25,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<Transaction2> _recentTransactions = [];
   Map<String, double> _todaySales = {};
+  Map<String, int> _stockLevels = {};
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _loadRecentTransactions();
       _loadTodaySales();
+      _loadStockLevels();
     });
   }
 
@@ -42,6 +44,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _loadTodaySales() async {
     _todaySales = await StatsApi.getTodaySales();
+    setState(() {});
+  }
+
+  void _loadStockLevels() async {
+    _stockLevels = await StatsApi.getStockLevels();
     setState(() {});
   }
 
@@ -75,7 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 24),
                         _buildActionButtons(context),
                         const SizedBox(height: 24),
-                        _buildStockLevelStats(normal: 100, low: 35, empty: 10),
+                        _buildStockLevelStats(
+                          normal: _stockLevels['normal']?.toDouble() ?? 0,
+                          low: _stockLevels['low']?.toDouble() ?? 0,
+                          empty: _stockLevels['empty']?.toDouble() ?? 0,
+                        ),
                         const SizedBox(height: 24),
                         _buildRecentTransactions(context),
                         const SizedBox(height: 16),
@@ -297,7 +308,16 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              StockLevelChartWidget(normal: 100, low: 35, empty: 10),
+              _stockLevels.isEmpty
+                  ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                  : StockLevelChartWidget(
+                    normal: _stockLevels['normal']?.toDouble() ?? 0,
+                    low: _stockLevels['low']?.toDouble() ?? 0,
+                    empty: _stockLevels['empty']?.toDouble() ?? 0,
+                  ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -317,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       value: low.toInt().toString(),
                     ),
                     _stockLevelStatsLegendItem(
-                      color: const Color(0xFF5E1F1F),
+                      color: const Color(0xFFC61100),
                       label: 'Empty',
                       value: empty.toInt().toString(),
                     ),
@@ -504,7 +524,7 @@ class _StockLevelChartWidgetState extends State<StockLevelChartWidget> {
           return PieChartSectionData(
             value: widget.empty,
             title: '${(widget.empty / total * 100).floor()}%',
-            color: const Color(0xFF5E1F1F),
+            color: const Color(0xFFC61100),
             radius: chartRadius,
             titleStyle: chartTitleStyle,
             borderSide: borderSide,

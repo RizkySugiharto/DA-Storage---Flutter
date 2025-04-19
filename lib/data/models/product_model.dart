@@ -27,6 +27,20 @@ class Product {
     required this.lastUpdated,
   });
 
+  static Product fromJSON(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'] ?? 0,
+      category: Category(
+        id: json['category']['id'] ?? 0,
+        name: json['category']['name'] ?? '',
+      ),
+      name: json['name'] ?? '',
+      price: json['price'] ?? 0,
+      stock: json['stock'] ?? 0,
+      lastUpdated: DateTime.parse(json['updated_at'] ?? '00-00-00'),
+    );
+  }
+
   StockLevelEnum getStockLevel() {
     if (stock <= 0) {
       return StockLevelEnum.empty;
