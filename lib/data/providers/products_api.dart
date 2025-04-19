@@ -52,6 +52,31 @@ class ProductsApi {
     return data;
   }
 
+  static Future<Product> post({
+    required String name,
+    required int categoryId,
+    required int price,
+    required int stock,
+  }) async {
+    final formData = FormData.fromMap({
+      'name': name,
+      'category_id': categoryId,
+      'price': price,
+      'stock': stock,
+    });
+    final response = await ApiUtils.getClient().post(
+      '/products/',
+      data: formData,
+    );
+    final resData = response.response?.data as Map<String, dynamic>;
+
+    if (response.statusCode == HttpStatus.ok) {
+      return Product.fromJSON(resData);
+    } else {
+      return Product.none;
+    }
+  }
+
   static Future<Product> put({
     required int id,
     required String name,

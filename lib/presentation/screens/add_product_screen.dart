@@ -1,6 +1,9 @@
 import 'package:da_cashier/data/constants/colors_constants.dart';
 import 'package:da_cashier/data/constants/placeholder_constants.dart';
+import 'package:da_cashier/data/models/category_model.dart';
 import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
+import 'package:da_cashier/data/providers/categories_api.dart';
+import 'package:da_cashier/data/providers/products_api.dart';
 import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
 import 'package:da_cashier/presentation/widgets/confirmation_buttons_widget.dart';
 import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
@@ -10,6 +13,7 @@ import 'package:da_cashier/presentation/widgets/input_text_widget.dart';
 import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
 import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
@@ -23,8 +27,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
   String? _selectedCategory;
+  List<Category> _availableCategories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _fetchAllCategories();
+    });
+  }
 
   void _onConfirmPressed(BuildContext context) {
+    ProductsApi.post(
+      name: _nameController.text,
+      categoryId: _getCategoryByName(_selectedCategory ?? '').id,
+      price: int.parse(_priceController.text.replaceAll('.', '')),
+      stock: int.parse(_stockController.text.replaceAll('.', '')),
+    );
     AlertBannerUtils.popWithAlertBanner(
       context,
       message: "Successfully add the product",
@@ -34,6 +53,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   void _onCancelPressed(BuildContext context) {
     Navigator.pop(context);
+  }
+
+  Category _getCategoryByName(String name) {
+    for (Category category in _availableCategories) {
+      if (category.name == name) {
+        return category;
+      }
+    }
+    return Category.none;
+  }
+
+  void _fetchAllCategories() async {
+    _availableCategories = await CategoriesApi.getAllCategories();
+    setState(() {});
   }
 
   @override
@@ -104,7 +137,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
           InputSelectWidget(
             label: 'Category',
-            options: ['a', 'b'],
+            options: _availableCategories.map((item) => item.name).toList(),
             hint: 'Choose one category',
             value: _selectedCategory,
             onChanged: (selected) {
