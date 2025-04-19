@@ -3,6 +3,7 @@ import 'package:da_cashier/data/constants/placeholder_constants.dart';
 import 'package:da_cashier/data/constants/route_constants.dart';
 import 'package:da_cashier/data/models/category_model.dart';
 import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
+import 'package:da_cashier/data/providers/categories_api.dart';
 import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
 import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
 import 'package:da_cashier/presentation/widgets/header_widget.dart';
@@ -12,31 +13,11 @@ import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
 import 'package:da_cashier/presentation/widgets/search_bar_widget.dart';
 import 'package:da_cashier/presentation/widgets/sorts_dialog_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CategoriesScreen extends StatefulWidget {
-  final List<Category> _accounts = [
-    Category(
-      id: 1,
-      name: 'Electronics',
-      description:
-          'Mobile devices, computers, audio equipment, accessories, etc.',
-    ),
-    Category(
-      id: 1,
-      name: 'Electronics',
-      description:
-          'Mobile devices, computers, audio equipment, accessories, etc.',
-    ),
-    Category(
-      id: 1,
-      name: 'Electronics',
-      description:
-          'Mobile devices, computers, audio equipment, accessories, etc.',
-    ),
-  ];
-
-  CategoriesScreen({super.key});
+  const CategoriesScreen({super.key});
 
   @override
   State<CategoriesScreen> createState() => _AccountsScreenState();
@@ -44,11 +25,33 @@ class CategoriesScreen extends StatefulWidget {
 
 class _AccountsScreenState extends State<CategoriesScreen> {
   final TextEditingController _searchController = TextEditingController();
+  List<Category> _categories = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _loadCategories();
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _loadCategories() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    _categories = await CategoriesApi.getAllCategories();
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -118,19 +121,29 @@ class _AccountsScreenState extends State<CategoriesScreen> {
   }
 
   Widget _buildCategoryList() {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      scrollDirection: Axis.vertical,
-      shrinkWrap: true,
-      padding: const EdgeInsets.all(16),
-      itemCount: widget._accounts.length,
-      itemBuilder: (context, index) {
-        final category = widget._accounts[index];
-        return Column(
-          children: [_buildCategoryItem(category), const SizedBox(height: 16)],
-        );
-      },
-    );
+    if (isLoading) {
+      return Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else {
+      return ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(16),
+        itemCount: _categories.length,
+        itemBuilder: (context, index) {
+          final category = _categories[index];
+          return Column(
+            children: [
+              _buildCategoryItem(category),
+              const SizedBox(height: 16),
+            ],
+          );
+        },
+      );
+    }
   }
 
   Widget _buildCategoryItem(Category category) {

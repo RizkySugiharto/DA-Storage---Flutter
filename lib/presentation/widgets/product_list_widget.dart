@@ -50,26 +50,19 @@ class _ProductListWidgetState extends State<ProductListWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.products.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    } else {
-      return ListView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        scrollDirection: Axis.vertical,
-        shrinkWrap: true,
-        padding: const EdgeInsets.all(16),
-        itemCount: widget.products.length,
-        itemBuilder: (context, index) {
-          final product = widget.products[index];
-          return Column(
-            children: [_buildProductItem(product), const SizedBox(height: 16)],
-          );
-        },
-      );
-    }
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      scrollDirection: Axis.vertical,
+      shrinkWrap: true,
+      padding: const EdgeInsets.all(16),
+      itemCount: widget.products.length,
+      itemBuilder: (context, index) {
+        final product = widget.products[index];
+        return Column(
+          children: [_buildProductItem(product), const SizedBox(height: 16)],
+        );
+      },
+    );
   }
 
   Widget _buildProductItem(Product product) {

@@ -26,6 +26,7 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Product> _products = [];
+  bool isLoading = true;
   Map<String, Set<String>> _crrntFilters = {};
   Map<String, Set<String>> _crrntSortings = {};
   List<Category> _availableCategories = [];
@@ -82,8 +83,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   void _fetchAllCategories() async {
+    setState(() {
+      isLoading = true;
+    });
+
     _availableCategories = await CategoriesApi.getAllCategories();
-    setState(() {});
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Category _getCategoryByName(String name) {
@@ -128,7 +136,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
                             _loadAllProducts();
                           },
                         ),
-                        ProductListWidget(products: _products),
+                        isLoading
+                            ? Padding(
+                              padding: const EdgeInsets.all(32.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                            : ProductListWidget(products: _products),
                         _buildStockLegends(),
                       ],
                     ),

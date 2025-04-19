@@ -81,6 +81,6 @@ class ProductsApi {
   static Future<bool> delete(int id) async {
     final response = await ApiUtils.getClient().delete('/products/$id');
 
-    return response.statusCode == HttpStatus.ok;
+    return response.response?.statusCode == HttpStatus.resetContent;
   }
 }
