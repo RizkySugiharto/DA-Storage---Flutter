@@ -71,7 +71,12 @@ analysis_benchmark.json
 .pub-preload-cache/
 .pub-cache/
 .pub/
-build/
+/build/*
+!/build/app/
+/build/app/*
+!/build/app/outputs/
+/build/app/outputs/*
+!/build/app/outputs/apk
 flutter_*.png
 linked_*.ds
 unlinked.ds
