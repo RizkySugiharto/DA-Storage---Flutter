@@ -1,5 +1,5 @@
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/presentation/widgets/alert_banner_widget.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/presentation/widgets/alert_banner_widget.dart';
 import 'package:flutter/material.dart';
 
 class AlertBannerUtils {

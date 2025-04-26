@@ -1,41 +1,57 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/constants/route_constants.dart';
-import 'package:da_cashier/data/models/category_model.dart';
-import 'package:da_cashier/data/models/product_model.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
-import 'package:da_cashier/presentation/utils/barcode_utils.dart';
-import 'package:da_cashier/presentation/widgets/confirmation_buttons_widget.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/route_constants.dart';
+import 'package:da_storage/data/models/product_model.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/providers/products_api.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/presentation/utils/barcode_utils.dart';
+import 'package:da_storage/presentation/widgets/confirmation_buttons_widget.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-// ignore: must_be_immutable
-class ScanBarcodeScreen extends StatelessWidget {
-  late Product _productResult;
-  late String _barcodeResult;
-  late bool _createTransaction;
+class ScanBarcodeScreen extends StatefulWidget {
+  const ScanBarcodeScreen({super.key});
+
+  @override
+  State<ScanBarcodeScreen> createState() => _ScanBarcodeScreenState();
+}
+
+class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
   final _numFormat = NumberFormat.decimalPattern('ID-id');
+  Product _productResult = Product.none;
+  String _barcodeResult = '';
+  bool _createTransaction = false;
+  bool _isLoading = false;
 
-  ScanBarcodeScreen({super.key});
-
-  Product _fetchProduct(int id) {
-    return Product(
-      id: 1,
-      name: 'Coffe Cup',
-      category: Category(id: 1, name: 'Foods & Drinks', description: 'foods'),
-      price: 5_000,
-      stock: 50,
-      lastUpdated: DateTime.now(),
-    );
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _setupProductResult();
+    });
   }
 
-  void _onUpdatePressed(BuildContext context) {
+  Future<Product> _fetchProduct(int id) async {
+    final product = await ProductsApi.getSingleProduct(id);
+
+    if (mounted && product == Product.none) {
+      AlertBannerUtils.popWithAlertBanner(
+        context,
+        message: 'Product isn\'t exists',
+        alertType: AlertBannerType.error,
+      );
+    }
+
+    return product;
+  }
+
+  void _onUpdatePressed() {
     Navigator.pushNamed(
       context,
       RouteConstants.editProduct,
@@ -43,19 +59,33 @@ class ScanBarcodeScreen extends StatelessWidget {
     );
   }
 
-  void _onDeletePressed(BuildContext context) {
-    AlertBannerUtils.popWithAlertBanner(
-      context,
-      message: 'Successfully delete the scanned product.',
-      alertType: AlertBannerType.success,
-    );
+  Future<void> _onDeletePressed() async {
+    final isSuccess = await ProductsApi.delete(_productResult.id);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (isSuccess) {
+      AlertBannerUtils.popWithAlertBanner(
+        context,
+        message: "Successfully delete the product. Refresh to see the changes.",
+        alertType: AlertBannerType.success,
+      );
+    } else {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Failed to delete the product",
+        alertType: AlertBannerType.error,
+      );
+    }
   }
 
-  void _onConfirmPressed(BuildContext context) {
+  void _onConfirmPressed() {
     if (_createTransaction) {
       Navigator.pushReplacementNamed(
         context,
-        RouteConstants.createTransaction,
+        RouteConstants.addTransaction,
         result: <Product>{_productResult},
         arguments: <Product>{_productResult},
       );
@@ -64,22 +94,34 @@ class ScanBarcodeScreen extends StatelessWidget {
     }
   }
 
-  void _onCancelPressed(BuildContext context) {
+  void _onCancelPressed() {
     Navigator.pop(context);
   }
 
-  void _setupProductResult(BuildContext context) {
+  Future<void> _setupProductResult() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final arguments =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     _barcodeResult = arguments['barcodeResult'] as String;
     _createTransaction = arguments['createTransaction'] as bool;
-    _productResult = _fetchProduct(int.parse(_barcodeResult.substring(1, 7)));
+    _productResult = await _fetchProduct(
+      int.parse(_barcodeResult.substring(1, 7)),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _onRefresh() async {
+    await _setupProductResult();
   }
 
   @override
   Widget build(BuildContext context) {
-    _setupProductResult(context);
-
     return Scaffold(
       backgroundColor: ColorsConstants.lightGrey,
       body: SafeArea(
@@ -88,32 +130,32 @@ class ScanBarcodeScreen extends StatelessWidget {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ScreenLabelWidget(
-                          label: 'Scan Barcode',
-                          canGoBack: true,
-                        ),
-                        const SizedBox(height: 8),
-                        _buildScanResult(context),
-                        const SizedBox(height: 16),
-                        ConfirmationButtonsWidget(
-                          confirmLabel: 'Add',
-                          cancelLabel: 'Cancel',
-                          onConfirmPressed: () => _onConfirmPressed(context),
-                          onCancelPressed: () => _onCancelPressed(context),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildCreateTransactionInfoText(),
-                        const SizedBox(height: 54),
-                      ],
+                  child: RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ScreenLabelWidget(
+                            label: 'Scan Barcode',
+                            canGoBack: true,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildScanResult(context),
+                          const SizedBox(height: 16),
+                          ConfirmationButtonsWidget(
+                            confirmLabel: 'Add',
+                            cancelLabel: 'Back',
+                            onConfirmPressed: () => _onConfirmPressed(),
+                            onCancelPressed: () => _onCancelPressed(),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildCreateTransactionInfoText(),
+                          const SizedBox(height: 54),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -156,7 +198,12 @@ class ScanBarcodeScreen extends StatelessWidget {
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            child: Center(child: BarcodeUtils.generateBarcode(_barcodeResult)),
+            child: Center(
+              child:
+                  _isLoading
+                      ? CircularProgressIndicator()
+                      : BarcodeUtils.generateBarcode(_barcodeResult),
+            ),
           ),
           const SizedBox(height: 24),
           Text(
@@ -247,30 +294,34 @@ class ScanBarcodeScreen extends StatelessWidget {
               _numFormat.format(_productResult.stock),
               style: GoogleFonts.poppins(
                 fontSize: 16,
-                fontWeight: FontWeight.w300,
+                fontWeight: FontWeight.w400,
                 color: _productResult.getStockLevelColor(),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              _buildActionButton(
-                label: 'Update',
-                foregroundColor: ColorsConstants.blue,
-                backgroundColor: ColorsConstants.blue.withValues(alpha: 0.2),
-                onPressed: () => _onUpdatePressed(context),
+          _isLoading
+              ? CircularProgressIndicator()
+              : Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  _buildActionButton(
+                    label: 'Update',
+                    foregroundColor: ColorsConstants.blue,
+                    backgroundColor: ColorsConstants.blue.withValues(
+                      alpha: 0.2,
+                    ),
+                    onPressed: () => _onUpdatePressed(),
+                  ),
+                  _buildActionButton(
+                    label: 'Delete',
+                    foregroundColor: Colors.red,
+                    backgroundColor: Colors.red.withValues(alpha: 0.2),
+                    onPressed: () => _onDeletePressed(),
+                  ),
+                ],
               ),
-              _buildActionButton(
-                label: 'Delete',
-                foregroundColor: Colors.red,
-                backgroundColor: Colors.red.withValues(alpha: 0.2),
-                onPressed: () => _onDeletePressed(context),
-              ),
-            ],
-          ),
         ],
       ),
     );

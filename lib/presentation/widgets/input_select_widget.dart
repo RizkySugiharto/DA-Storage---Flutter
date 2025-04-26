@@ -1,4 +1,4 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -6,6 +6,7 @@ class InputSelectWidget extends StatelessWidget {
   final String label;
   final TextStyle? labelStyle;
   final String? value;
+  final Widget? itemWidget;
   final String? hint;
   final List<String> options;
   final Function(String?) onChanged;
@@ -15,6 +16,7 @@ class InputSelectWidget extends StatelessWidget {
     this.value,
     this.hint,
     this.labelStyle,
+    this.itemWidget,
     required this.label,
     required this.options,
     required this.onChanged,
@@ -75,13 +77,15 @@ class InputSelectWidget extends StatelessWidget {
                     .map(
                       (opt) => DropdownMenuItem(
                         value: opt,
-                        child: Text(
-                          opt,
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: ColorsConstants.black,
-                          ),
-                        ),
+                        child:
+                            itemWidget ??
+                            Text(
+                              opt,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: ColorsConstants.black,
+                              ),
+                            ),
                       ),
                     )
                     .toList(),

@@ -1,7 +1,7 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AlertBannerWidget extends StatefulWidget {

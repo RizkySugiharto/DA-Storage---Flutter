@@ -1,17 +1,18 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/models/category_model.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/data/providers/categories_api.dart';
-import 'package:da_cashier/data/providers/products_api.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
-import 'package:da_cashier/presentation/widgets/confirmation_buttons_widget.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/input_select_widget.dart';
-import 'package:da_cashier/presentation/widgets/input_text_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+
+import 'package:da_storage/data/models/category_model.dart';
+import 'package:da_storage/data/models/product_model.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/providers/categories_api.dart';
+import 'package:da_storage/data/providers/products_api.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/presentation/widgets/confirmation_buttons_widget.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/input_select_widget.dart';
+import 'package:da_storage/presentation/widgets/input_text_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -37,21 +38,34 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
   }
 
-  void _onConfirmPressed(BuildContext context) {
-    ProductsApi.post(
+  void _onConfirmPressed() async {
+    final newProduct = await ProductsApi.post(
       name: _nameController.text,
       categoryId: _getCategoryByName(_selectedCategory ?? '').id,
       price: int.parse(_priceController.text.replaceAll('.', '')),
       stock: int.parse(_stockController.text.replaceAll('.', '')),
     );
-    AlertBannerUtils.popWithAlertBanner(
-      context,
-      message: "Successfully add the product",
-      alertType: AlertBannerType.success,
-    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (newProduct != Product.none) {
+      AlertBannerUtils.popWithAlertBanner(
+        context,
+        message: "Successfully add the product. Refresh to see the changes",
+        alertType: AlertBannerType.success,
+      );
+    } else {
+      AlertBannerUtils.popWithAlertBanner(
+        context,
+        message: "Failed to add the product. Refresh to see the changes",
+        alertType: AlertBannerType.success,
+      );
+    }
   }
 
-  void _onCancelPressed(BuildContext context) {
+  void _onCancelPressed() {
     Navigator.pop(context);
   }
 
@@ -79,10 +93,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -93,8 +104,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         ConfirmationButtonsWidget(
                           confirmLabel: 'Add',
                           cancelLabel: 'Cancel',
-                          onConfirmPressed: () => _onConfirmPressed(context),
-                          onCancelPressed: () => _onCancelPressed(context),
+                          onConfirmPressed: () => _onConfirmPressed(),
+                          onCancelPressed: () => _onCancelPressed(),
                         ),
                         const SizedBox(height: 24),
                       ],

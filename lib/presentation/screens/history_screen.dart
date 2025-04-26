@@ -1,15 +1,15 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/constants/route_constants.dart';
-import 'package:da_cashier/data/models/transaction_model.dart';
-import 'package:da_cashier/data/providers/transactions_api.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/input_select_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
-import 'package:da_cashier/presentation/widgets/sorts_dialog_widget.dart';
-import 'package:da_cashier/presentation/widgets/transaction_card_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+
+import 'package:da_storage/data/constants/route_constants.dart';
+import 'package:da_storage/data/models/transaction_model.dart';
+import 'package:da_storage/data/providers/transactions_api.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/input_select_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
+import 'package:da_storage/presentation/widgets/sorts_dialog_widget.dart';
+import 'package:da_storage/presentation/widgets/transaction_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -25,6 +25,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _selectedDateRange = _dateRangeOptions[1];
   String _selectedType = _typeOptions.first;
   Map<String, Set<String>> _crrntSortings = {};
+  bool isLoading = false;
 
   static const List<String> _dateRangeOptions = [
     '1 Month',
@@ -52,6 +53,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _loadTransactions() async {
+    setState(() {
+      isLoading = true;
+    });
+
     _transactions = await TransactionsApi.getAllTransactions(
       filterDateRange:
           {
@@ -86,7 +91,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               }[_crrntSortings['Sort Order']?.first]
               : '',
     );
-    setState(() {});
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -99,10 +107,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -179,14 +184,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildTransactionList() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        spacing: 18,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children:
-            _transactions
-                .map((item) => TransactionCardWidget(transaction: item))
-                .toList(),
-      ),
+      child:
+          isLoading
+              ? Center(child: CircularProgressIndicator())
+              : Column(
+                spacing: 18,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    _transactions
+                        .map((item) => TransactionCardWidget(transaction: item))
+                        .toList(),
+              ),
     );
   }
 

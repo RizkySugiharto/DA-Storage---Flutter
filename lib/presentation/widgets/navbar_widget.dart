@@ -1,8 +1,8 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/route_constants.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/route_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:da_cashier/data/notifiers/navbar_notifiers.dart';
+import 'package:da_storage/data/notifiers/navbar_notifiers.dart';
 
 class NavbarWidget extends StatelessWidget {
   const NavbarWidget({super.key});

@@ -1,13 +1,15 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
-import 'package:da_cashier/presentation/widgets/confirmation_buttons_widget.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/input_text_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/models/category_model.dart';
+
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/providers/categories_api.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/presentation/widgets/confirmation_buttons_widget.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/input_text_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
 
 class AddCategoryScreen extends StatefulWidget {
@@ -21,15 +23,32 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  void _onConfirmPressed(BuildContext context) {
-    AlertBannerUtils.popWithAlertBanner(
-      context,
-      message: "Successfully add the category",
-      alertType: AlertBannerType.success,
+  void _onConfirmPressed() async {
+    final newCategory = await CategoriesApi.post(
+      name: _nameController.text,
+      description: _descriptionController.text,
     );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (newCategory != Category.none) {
+      AlertBannerUtils.popWithAlertBanner(
+        context,
+        message: "Successfully add the category. Refresh to see the changes.",
+        alertType: AlertBannerType.success,
+      );
+    } else {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Failed to add the category",
+        alertType: AlertBannerType.error,
+      );
+    }
   }
 
-  void _onCancelPressed(BuildContext context) {
+  void _onCancelPressed() {
     Navigator.pop(context);
   }
 
@@ -43,10 +62,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -57,8 +73,8 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                         ConfirmationButtonsWidget(
                           confirmLabel: 'Add',
                           cancelLabel: 'Cancel',
-                          onConfirmPressed: () => _onConfirmPressed(context),
-                          onCancelPressed: () => _onCancelPressed(context),
+                          onConfirmPressed: () => _onConfirmPressed(),
+                          onCancelPressed: () => _onCancelPressed(),
                         ),
                         const SizedBox(height: 24),
                       ],

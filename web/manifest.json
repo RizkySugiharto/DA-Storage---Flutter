@@ -1,6 +1,6 @@
 {
-    "name": "da_cashier",
-    "short_name": "da_cashier",
+    "name": "da_storage",
+    "short_name": "da_storage",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

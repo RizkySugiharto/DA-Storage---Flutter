@@ -1,19 +1,22 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// ignore: must_be_immutable
 class ConfirmationButtonsWidget extends StatelessWidget {
   final VoidCallback? onConfirmPressed;
   final VoidCallback? onCancelPressed;
   final String confirmLabel;
   final String cancelLabel;
   final double minimumButtonWidth;
+  bool isLoading;
 
-  const ConfirmationButtonsWidget({
+  ConfirmationButtonsWidget({
     super.key,
     this.onConfirmPressed,
     this.onCancelPressed,
     this.minimumButtonWidth = 150,
+    this.isLoading = false,
     required this.confirmLabel,
     required this.cancelLabel,
   });
@@ -53,7 +56,11 @@ class ConfirmationButtonsWidget extends StatelessWidget {
 
   Widget _buildConfirmButton() {
     return ElevatedButton(
-      onPressed: onConfirmPressed,
+      onPressed: () {
+        if (!isLoading || onConfirmPressed != null) {
+          onConfirmPressed!();
+        }
+      },
       style: ButtonStyle(
         backgroundColor: WidgetStatePropertyAll(ColorsConstants.black),
         padding: WidgetStatePropertyAll(
@@ -71,20 +78,27 @@ class ConfirmationButtonsWidget extends StatelessWidget {
           ),
         ),
       ),
-      child: Text(
-        confirmLabel,
-        style: GoogleFonts.poppins(
-          color: ColorsConstants.white,
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child:
+          isLoading
+              ? CircularProgressIndicator(color: ColorsConstants.white)
+              : Text(
+                confirmLabel,
+                style: GoogleFonts.poppins(
+                  color: ColorsConstants.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
     );
   }
 
   Widget _buildCancelButton() {
     return ElevatedButton(
-      onPressed: onCancelPressed,
+      onPressed: () {
+        if (!isLoading || onCancelPressed != null) {
+          onCancelPressed!();
+        }
+      },
       style: ButtonStyle(
         backgroundColor: WidgetStatePropertyAll(ColorsConstants.white),
         padding: WidgetStatePropertyAll(
@@ -102,10 +116,16 @@ class ConfirmationButtonsWidget extends StatelessWidget {
           ),
         ),
       ),
-      child: Text(
-        cancelLabel,
-        style: GoogleFonts.poppins(color: ColorsConstants.black, fontSize: 24),
-      ),
+      child:
+          isLoading
+              ? CircularProgressIndicator(color: ColorsConstants.black)
+              : Text(
+                cancelLabel,
+                style: GoogleFonts.poppins(
+                  color: ColorsConstants.black,
+                  fontSize: 24,
+                ),
+              ),
     );
   }
 }

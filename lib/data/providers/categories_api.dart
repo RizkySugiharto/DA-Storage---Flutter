@@ -1,21 +1,29 @@
 import 'dart:io';
 
-import 'package:da_cashier/data/models/category_model.dart';
-import 'package:da_cashier/data/utils/api_utils.dart';
+import 'package:da_storage/data/models/category_model.dart';
+import 'package:da_storage/data/utils/api_utils.dart';
 import 'package:rest_api_client/rest_api_client.dart';
 
 class CategoriesApi {
-  static Future<List<Category>> getAllCategories({String? search}) async {
+  static Future<List<Category>> getAllCategories({
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+  }) async {
     final response = await ApiUtils.getClient().get(
       '/categories',
-      queryParameters: {'search': search},
+      queryParameters: {
+        'search': search,
+        'sort_by': sortBy ?? '',
+        'sort_order': sortOrder ?? '',
+      },
     );
 
     if (response.response?.data.length < 1) {
       return [];
     }
 
-    if (response.statusCode != HttpStatus.ok) {
+    if (response.response?.statusCode != HttpStatus.ok) {
       return [Category.none];
     }
 
@@ -29,13 +37,34 @@ class CategoriesApi {
     final response = await ApiUtils.getClient().get('/categories/$id');
     final resData = response.response?.data as Map<String, dynamic>;
 
-    if (response.statusCode != HttpStatus.ok) {
+    if (response.response?.statusCode != HttpStatus.ok) {
       return Category.none;
     }
 
     final data = Category.fromJSON(resData);
 
     return data;
+  }
+
+  static Future<Category> post({
+    required String name,
+    required String description,
+  }) async {
+    final formData = FormData.fromMap({
+      'name': name,
+      'description': description,
+    });
+    final response = await ApiUtils.getClient().post(
+      '/categories',
+      data: formData,
+    );
+    final resData = response.response?.data as Map<String, dynamic>;
+
+    if (response.response?.statusCode == HttpStatus.created) {
+      return Category.fromJSON(resData);
+    } else {
+      return Category.none;
+    }
   }
 
   static Future<Category> put({

@@ -1,13 +1,15 @@
 class PurchasedProduct {
   final int productId;
   final String name;
+  final int currentStock;
   final int price;
-  int amount;
+  int quantity;
 
   PurchasedProduct({
     required this.productId,
     required this.name,
+    required this.currentStock,
     required this.price,
-    this.amount = 1,
+    this.quantity = 1,
   });
 }

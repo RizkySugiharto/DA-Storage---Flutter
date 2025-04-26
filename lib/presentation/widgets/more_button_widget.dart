@@ -1,6 +1,15 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
+import 'dart:typed_data';
+
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/static/account_static.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/presentation/utils/barcode_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:barcode_image/barcode_image.dart';
+import 'package:image/image.dart' as img;
+import 'package:share_plus/share_plus.dart';
 
 class MoreButtonWidget extends StatelessWidget {
   final double spacing = 16;
@@ -17,6 +26,77 @@ class MoreButtonWidget extends StatelessWidget {
     this.barcodeValue = '',
   });
 
+  Future<void> _onDisplayBarcode(
+    BuildContext context,
+    BuildContext dialogContext,
+  ) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext displayContext) {
+        return AlertDialog(
+          backgroundColor: ColorsConstants.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Barcode',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              color: ColorsConstants.black,
+              fontSize: 18,
+            ),
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            color: ColorsConstants.white,
+            child: BarcodeUtils.generateBarcode(barcodeValue),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _onSaveAndShare(
+    BuildContext context,
+    BuildContext dialogContext,
+  ) async {
+    final params = ShareParams(
+      title: 'Barocode File',
+      files: [XFile.fromData(barcodeToBytes())],
+      fileNameOverrides: ['$barcodeValue.png'],
+    );
+    final result = await SharePlus.instance.share(params);
+
+    if (!context.mounted || !dialogContext.mounted) {
+      return;
+    }
+
+    if (result.status == ShareResultStatus.success) {
+      Navigator.of(dialogContext).pop();
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: 'Successfully share the barcode as file.',
+        alertType: AlertBannerType.success,
+      );
+    }
+  }
+
+  Uint8List barcodeToBytes() {
+    final image = img.Image(width: 400, height: 160);
+
+    img.fill(image, color: img.ColorRgb8(255, 255, 255));
+    drawBarcode(
+      image,
+      Barcode.upcE(),
+      barcodeValue,
+      width: 400,
+      height: 160,
+      font: img.arial24,
+    );
+
+    return img.encodePng(image);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<MoreButtonEnum>(
@@ -30,7 +110,7 @@ class MoreButtonWidget extends StatelessWidget {
             showDialog(
               context: context,
               builder: (dialogContext) {
-                return _buildBarcodeOptionsDialog(dialogContext);
+                return _buildBarcodeOptionsDialog(context, dialogContext);
               },
             );
           case MoreButtonEnum.edit:
@@ -56,26 +136,28 @@ class MoreButtonWidget extends StatelessWidget {
           );
         }
 
-        menuItems.addAll([
-          PopupMenuItem(
-            padding: EdgeInsets.all(spacing),
-            value: MoreButtonEnum.edit,
-            child: _buildMenuItem(
-              iconData: Icons.edit_square,
-              label: 'Edit',
-              color: Colors.black,
+        if (AccountStatic.isAdmin()) {
+          menuItems.addAll([
+            PopupMenuItem(
+              padding: EdgeInsets.all(spacing),
+              value: MoreButtonEnum.edit,
+              child: _buildMenuItem(
+                iconData: Icons.edit_square,
+                label: 'Edit',
+                color: Colors.black,
+              ),
             ),
-          ),
-          PopupMenuItem(
-            padding: EdgeInsets.all(spacing),
-            value: MoreButtonEnum.delete,
-            child: _buildMenuItem(
-              iconData: Icons.delete_outlined,
-              label: 'Delete',
-              color: Colors.red,
+            PopupMenuItem(
+              padding: EdgeInsets.all(spacing),
+              value: MoreButtonEnum.delete,
+              child: _buildMenuItem(
+                iconData: Icons.delete_outlined,
+                label: 'Delete',
+                color: Colors.red,
+              ),
             ),
-          ),
-        ]);
+          ]);
+        }
 
         return menuItems;
       },
@@ -96,7 +178,10 @@ class MoreButtonWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildBarcodeOptionsDialog(BuildContext dialogContext) {
+  Widget _buildBarcodeOptionsDialog(
+    BuildContext context,
+    BuildContext dialogContext,
+  ) {
     return Align(
       alignment: Alignment.center,
       child: Material(
@@ -139,13 +224,13 @@ class MoreButtonWidget extends StatelessWidget {
               const SizedBox(height: 8),
               _buildBarcodeOption(
                 icon: Icons.share,
-                label: 'Share',
-                onTap: () {},
+                label: 'Save & Share',
+                onTap: () => _onSaveAndShare(context, dialogContext),
               ),
               _buildBarcodeOption(
-                icon: Icons.folder_copy,
-                label: 'Save to Files',
-                onTap: () {},
+                icon: Icons.qr_code_rounded,
+                label: 'Display',
+                onTap: () => _onDisplayBarcode(context, dialogContext),
               ),
             ],
           ),

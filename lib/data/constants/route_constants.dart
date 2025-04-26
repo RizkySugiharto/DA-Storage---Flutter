@@ -3,9 +3,11 @@ class RouteConstants {
   static const String home = 'home';
   static const String notifications = 'notificationSettings';
   static const String transactionDetails = 'transactionDetails';
-  static const String createTransaction = 'newTransaction';
+  static const String addTransaction = 'addTransaction';
   static const String scanBarcode = 'scanBarcode';
   static const String selectProducts = 'selectProducts';
+  static const String selectSupplier = 'selectSupplier';
+  static const String selectCustomer = 'selectCustomer';
   static const String products = 'products';
   static const String addProduct = 'addProduct';
   static const String editProduct = 'editProduct';
@@ -16,6 +18,11 @@ class RouteConstants {
   static const String history = 'history';
   static const String reports = 'reports';
   static const String settings = 'settings';
+  static const String suppliersAndCustomers = 'suppliersAndCustomers';
+  static const String addSupplier = 'addSupplier';
+  static const String editSupplier = 'editSupplier';
+  static const String addCustomer = 'addCustomer';
+  static const String editCustomer = 'editCustomer';
   static const String accounts = 'accounts';
   static const String categories = 'categories';
   static const String notificationSettings = 'notificationSettings';

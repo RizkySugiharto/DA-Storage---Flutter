@@ -1,49 +1,23 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/constants/route_constants.dart';
-import 'package:da_cashier/data/models/account_model.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/more_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
-import 'package:da_cashier/presentation/widgets/search_bar_widget.dart';
-import 'package:da_cashier/presentation/widgets/sorts_dialog_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/route_constants.dart';
+import 'package:da_storage/data/models/account_model.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/providers/accounts_api.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/more_button_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
+import 'package:da_storage/presentation/widgets/search_bar_widget.dart';
+import 'package:da_storage/presentation/widgets/sorts_dialog_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class AccountsScreen extends StatefulWidget {
-  final List<Account> _accounts = [
-    Account(
-      id: 1,
-      avatarUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
-      name: 'Udin Surudin',
-      email: 'udinsurudin12345@gmail.com',
-      role: AccountRole.admin,
-    ),
-    Account(
-      id: 1,
-      avatarUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
-      name: 'Udin Surudin',
-      email: 'udinsurudin12345@gmail.com',
-      role: AccountRole.admin,
-    ),
-    Account(
-      id: 1,
-      avatarUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
-      name: 'Udin Surudin',
-      email: 'udinsurudin12345@gmail.com',
-      role: AccountRole.admin,
-    ),
-  ];
-
-  AccountsScreen({super.key});
+  const AccountsScreen({super.key});
 
   @override
   State<AccountsScreen> createState() => _AccountsScreenState();
@@ -51,12 +25,80 @@ class AccountsScreen extends StatefulWidget {
 
 class _AccountsScreenState extends State<AccountsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final Set<FilterEnum> _crrntFilters = <FilterEnum>{FilterEnum.all};
+  final Set<AccountRole> _crrntFilters = <AccountRole>{};
+  Map<String, Set<String>> _crrntSortings = {};
+  List<Account> _accounts = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _loadAllAccounts();
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAllAccounts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    _accounts = await AccountsApi.getAllAccounts(
+      search: _searchController.text,
+      role: _crrntFilters.firstOrNull,
+      sortBy:
+          (_crrntSortings['Sort By']?.isNotEmpty ?? false)
+              ? {
+                'Account ID': 'id',
+                'Name': 'name',
+                'Email': 'email',
+                'Role': 'role',
+              }[_crrntSortings['Sort By']?.first]
+              : '',
+      sortOrder:
+          (_crrntSortings['Sort Order']?.isNotEmpty ?? false)
+              ? {
+                'Ascending': 'asc',
+                'Descending': 'desc',
+              }[_crrntSortings['Sort Order']?.first]
+              : '',
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  void _onDeletePressed(Account account) async {
+    final isSuccess = await AccountsApi.delete(account.id);
+
+    if (!mounted) {
+      return;
+    }
+
+    if (isSuccess) {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Successfully delete the account. Refresh to see the changes.",
+        alertType: AlertBannerType.success,
+      );
+    } else {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Failed to delete the account.",
+        alertType: AlertBannerType.error,
+      );
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await _loadAllAccounts();
   }
 
   @override
@@ -69,28 +111,31 @@ class _AccountsScreenState extends State<AccountsScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ScreenLabelWidget(
-                          label: 'Accounts Management',
-                          actionButtons: [_buildSortIconButton()],
-                          canGoBack: true,
-                        ),
-                        SearchBarWidget(
-                          searchController: _searchController,
-                          hintText: 'Search account....',
-                          onSubmitted: (submitted) {},
-                        ),
-                        _buildFilterChips(),
-                        _buildAccountList(),
-                      ],
+                  child: RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ScreenLabelWidget(
+                            label: 'Accounts Management',
+                            actionButtons: [_buildSortIconButton()],
+                            canGoBack: true,
+                          ),
+                          SearchBarWidget(
+                            searchController: _searchController,
+                            hintText: 'Search account....',
+                            onSubmitted: (submitted) {
+                              _loadAllAccounts();
+                            },
+                          ),
+                          _buildFilterChips(),
+                          _buildAccountList(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -114,9 +159,17 @@ class _AccountsScreenState extends State<AccountsScreen> {
             return SortsDialogWidget(
               dialogContext: dialogContext,
               title: 'Sorts',
+              currentSortings:
+                  _crrntSortings.isNotEmpty ? _crrntSortings : null,
               sortSections: {
                 'Sort Order': ['Ascending', 'Descending'],
                 'Sort By': ['Account ID', 'Name', 'Email', 'Role'],
+              },
+              onSortSelected: (selected, value, crrnt) {
+                _crrntSortings = crrnt;
+              },
+              onDialogClosed: () {
+                _loadAllAccounts();
               },
             );
           },
@@ -133,12 +186,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
         spacing: 10,
         runSpacing: 10,
         children:
-            {
-              'All': FilterEnum.all,
-              'Admin': FilterEnum.admin,
-              'Staff': FilterEnum.staff,
-            }.entries.map((entry) {
-              final bool isSelected = _crrntFilters.contains(entry.value);
+            ['All', 'Admin', 'Staff'].map((item) {
+              final bool isSelected =
+                  item == 'All' && _crrntFilters.isEmpty ||
+                  item == 'Admin' &&
+                      _crrntFilters.contains(AccountRole.admin) ||
+                  item == 'Staff' && _crrntFilters.contains(AccountRole.staff);
               final Color color =
                   isSelected ? ColorsConstants.blue : ColorsConstants.black;
 
@@ -160,7 +213,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
                 backgroundColor: ColorsConstants.white,
                 selectedColor: ColorsConstants.blue.withValues(alpha: 0.2),
                 label: Text(
-                  entry.key,
+                  item,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
@@ -168,11 +221,23 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   ),
                 ),
                 onSelected: (bool selected) {
-                  setState(() {
-                    if (selected) {
-                      _crrntFilters.clear();
-                      _crrntFilters.add(entry.value);
-                    }
+                  if (!selected) {
+                    return;
+                  }
+
+                  _crrntFilters.clear();
+                  if (item != 'All') {
+                    _crrntFilters.add(
+                      {
+                            'Admin': AccountRole.admin,
+                            'Staff': AccountRole.staff,
+                          }[item] ??
+                          AccountRole.staff,
+                    );
+                  }
+
+                  _loadAllAccounts().then((_) {
+                    setState(() {});
                   });
                 },
               );
@@ -182,19 +247,26 @@ class _AccountsScreenState extends State<AccountsScreen> {
   }
 
   Widget _buildAccountList() {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      scrollDirection: Axis.vertical,
-      shrinkWrap: true,
-      padding: const EdgeInsets.all(16),
-      itemCount: widget._accounts.length,
-      itemBuilder: (context, index) {
-        final account = widget._accounts[index];
-        return Column(
-          children: [_buildAccountItem(account), const SizedBox(height: 16)],
-        );
-      },
-    );
+    if (_isLoading) {
+      return Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else {
+      return ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(16),
+        itemCount: _accounts.length,
+        itemBuilder: (context, index) {
+          final account = _accounts[index];
+          return Column(
+            children: [_buildAccountItem(account), const SizedBox(height: 16)],
+          );
+        },
+      );
+    }
   }
 
   Widget _buildAccountItem(Account account) {
@@ -218,18 +290,37 @@ class _AccountsScreenState extends State<AccountsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              CircleAvatar(
-                radius: 30,
-                child: CachedNetworkImage(imageUrl: account.avatarUrl),
+              Container(
+                width: 60,
+                height: 60,
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(shape: BoxShape.circle),
+                child: CachedNetworkImage(
+                  imageUrl: account.avatarUrl,
+                  scale: 0.1,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      account.name,
-                      style: GoogleFonts.poppins(fontSize: 16),
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: account.name,
+                            style: GoogleFonts.poppins(fontSize: 16),
+                          ),
+                          TextSpan(
+                            text: ' (${account.getRoleAsString()})',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: ColorsConstants.grey,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     Text(
                       account.email,
@@ -247,16 +338,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   Navigator.pushNamed(
                     context,
                     RouteConstants.editAccount,
-                    arguments: account.id,
+                    arguments: account,
                   );
                 },
-                onDeletePressed: () {
-                  AlertBannerUtils.showAlertBanner(
-                    context,
-                    message: "Successfully delete the account",
-                    alertType: AlertBannerType.success,
-                  );
-                },
+                onDeletePressed: () => _onDeletePressed(account),
               ),
             ],
           ),
@@ -265,5 +350,3 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 }
-
-enum FilterEnum { all, admin, staff }

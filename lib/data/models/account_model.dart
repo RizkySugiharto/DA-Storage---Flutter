@@ -39,11 +39,12 @@ class Account {
   }
 
   static List<String> getAllRoleAsString() {
-    return ['Cashier', 'Administrator'];
+    return ['Staff', 'Admin'];
   }
 
-  static AccountRole getRoleByString(String role) {
-    return {'admin': AccountRole.admin, 'staff': AccountRole.staff}[role] ??
+  static AccountRole getRoleByString(String? role) {
+    return {'admin': AccountRole.admin, 'staff': AccountRole.staff}[role
+            ?.toLowerCase()] ??
         AccountRole.staff;
   }
 }

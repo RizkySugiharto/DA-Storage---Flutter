@@ -1,13 +1,14 @@
-import 'package:da_cashier/data/constants/app_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/constants/route_constants.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/data/providers/auth_api.dart';
-import 'package:da_cashier/data/static/account_static.dart';
-import 'package:da_cashier/data/utils/api_utils.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/data/constants/app_constants.dart';
+import 'package:da_storage/data/constants/route_constants.dart';
+import 'package:da_storage/data/models/account_model.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/notifiers/navbar_notifiers.dart';
+import 'package:da_storage/data/providers/auth_api.dart';
+import 'package:da_storage/data/static/account_static.dart';
+import 'package:da_storage/data/utils/api_utils.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:da_cashier/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -21,6 +22,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -33,26 +35,51 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
+      setState(() {
+        isLoading = true;
+      });
+
       await ApiUtils.loadClientToken();
-      if (context.mounted && ApiUtils.isLoggedIn()) {
-        final account = await AuthApi.getMe();
-        PlaceholderConstants.username = account.name;
-        PlaceholderConstants.avatarUrl = account.avatarUrl;
 
-        AccountStatic.name = account.name;
-        AccountStatic.avatarUrl = account.avatarUrl;
-        AccountStatic.role = account.role;
-
-        // ignore: use_build_context_synchronously
-        Navigator.pushNamed(context, RouteConstants.home);
+      if (!mounted) {
+        return;
       }
+
+      if (!ApiUtils.isLoggedIn()) {
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      final account = await AuthApi.getMe();
+      if (account == Account.none) {
+        AuthApi.logout();
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      AccountStatic.setByAccount(account);
+
+      Navigator.pushReplacementNamed(context, RouteConstants.home);
+      navIndexNotifier.value = 0;
     });
   }
 
   void _onLoginPressed() async {
-    if (!context.mounted) {
+    if (!context.mounted || isLoading) {
       return;
     }
+
+    setState(() {
+      isLoading = true;
+    });
 
     if (_emailController.text.isEmpty) {
       AlertBannerUtils.showAlertBanner(
@@ -60,6 +87,9 @@ class _LoginScreenState extends State<LoginScreen> {
         message: 'Email can\'t be empty',
         alertType: AlertBannerType.error,
       );
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
     if (_passwordController.text.isEmpty) {
@@ -68,6 +98,9 @@ class _LoginScreenState extends State<LoginScreen> {
         message: 'Password can\'t be empty',
         alertType: AlertBannerType.error,
       );
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
 
@@ -76,17 +109,31 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text,
     );
 
-    if (isLoggedIn) {
-      // ignore: use_build_context_synchronously
-      Navigator.pushNamed(context, RouteConstants.home);
-    } else {
+    if (!mounted) {
+      return;
+    }
+
+    if (!isLoggedIn) {
       AlertBannerUtils.showAlertBanner(
-        // ignore: use_build_context_synchronously
         context,
         message: 'Email or password isn\'t valid',
         alertType: AlertBannerType.error,
       );
     }
+
+    final account = await AuthApi.getMe();
+    AccountStatic.setByAccount(account);
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.pushReplacementNamed(context, RouteConstants.home);
+    navIndexNotifier.value = 0;
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -160,14 +207,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(
-                          'Login',
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: ColorsConstants.white,
-                          ),
-                        ),
+                        child:
+                            isLoading
+                                ? Center(
+                                  child: CircularProgressIndicator(
+                                    color: ColorsConstants.white,
+                                  ),
+                                )
+                                : Text(
+                                  'Login',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: ColorsConstants.white,
+                                  ),
+                                ),
                       ),
                     ),
                   ),

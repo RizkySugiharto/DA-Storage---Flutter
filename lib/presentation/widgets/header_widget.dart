@@ -1,21 +1,15 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:da_cashier/data/constants/app_constants.dart';
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/presentation/utils/barcode_utils.dart';
+import 'package:da_storage/data/constants/app_constants.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/static/account_static.dart';
+import 'package:da_storage/presentation/utils/barcode_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HeaderWidget extends StatelessWidget {
-  final String username;
-  final String avatarUrl;
   final bool showScanner;
 
-  const HeaderWidget({
-    super.key,
-    required this.username,
-    required this.avatarUrl,
-    this.showScanner = true,
-  });
+  const HeaderWidget({super.key, this.showScanner = true});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +29,9 @@ class HeaderWidget extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 25,
-            child: CachedNetworkImage(imageUrl: avatarUrl),
+            backgroundImage: CachedNetworkImageProvider(
+              AccountStatic.avatarUrl,
+            ),
           ),
           const SizedBox(width: 12),
           Column(
@@ -49,7 +45,7 @@ class HeaderWidget extends StatelessWidget {
                 ),
               ),
               Text(
-                'Welcome back, ${username.split(' ')[0]}',
+                'Welcome back, ${AccountStatic.name.split(' ')[0]}',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   color: ColorsConstants.grey,

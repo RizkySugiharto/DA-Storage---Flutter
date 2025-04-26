@@ -1,19 +1,20 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/constants/route_constants.dart';
-import 'package:da_cashier/data/notifiers/navbar_notifiers.dart';
-import 'package:da_cashier/data/providers/stats_api.dart';
-import 'package:da_cashier/data/providers/transactions_api.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/transaction_card_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+
+import 'package:da_storage/data/constants/route_constants.dart';
+import 'package:da_storage/data/notifiers/navbar_notifiers.dart';
+import 'package:da_storage/data/providers/stats_api.dart';
+import 'package:da_storage/data/providers/transactions_api.dart';
+import 'package:da_storage/presentation/utils/barcode_utils.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/transaction_card_widget.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:da_cashier/data/models/transaction_model.dart';
+import 'package:da_storage/data/models/transaction_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -65,10 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.symmetric(
@@ -199,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.shopping_cart,
             label: 'New Sale',
             onTap: () {
-              Navigator.pushNamed(context, RouteConstants.createTransaction);
+              Navigator.pushNamed(context, RouteConstants.addTransaction);
             },
           ),
         ),
@@ -209,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.qr_code,
             label: 'Scan',
             onTap: () {
-              Navigator.pushNamed(context, RouteConstants.scanBarcode);
+              BarcodeUtils.scanBarcode(context);
             },
           ),
         ),
@@ -219,6 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.list_alt,
             label: 'Products',
             onTap: () {
+              navIndexNotifier.value = 1;
               Navigator.pushReplacementNamed(context, RouteConstants.products);
             },
           ),
@@ -421,7 +420,12 @@ class _HomeScreenState extends State<HomeScreen> {
           shrinkWrap: true,
           children:
               _recentTransactions
-                  .map((item) => TransactionCardWidget(transaction: item))
+                  .map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TransactionCardWidget(transaction: item),
+                    ),
+                  )
                   .toList(),
         ),
       ],
@@ -505,7 +509,7 @@ class _StockLevelChartWidgetState extends State<StockLevelChartWidget> {
         case 0:
           return PieChartSectionData(
             value: widget.normal,
-            title: '${(widget.normal / total * 100).floor()}%',
+            title: '${(widget.normal / total * 100).round()}%',
             color: const Color(0xFF4285F4),
             radius: chartRadius,
             titleStyle: chartTitleStyle,
@@ -514,7 +518,7 @@ class _StockLevelChartWidgetState extends State<StockLevelChartWidget> {
         case 1:
           return PieChartSectionData(
             value: widget.low,
-            title: '${(widget.low / total * 100).floor()}%',
+            title: '${(widget.low / total * 100).round()}%',
             color: const Color(0xFFEA4335),
             radius: chartRadius,
             titleStyle: chartTitleStyle,
@@ -523,7 +527,7 @@ class _StockLevelChartWidgetState extends State<StockLevelChartWidget> {
         case 2:
           return PieChartSectionData(
             value: widget.empty,
-            title: '${(widget.empty / total * 100).floor()}%',
+            title: '${(widget.empty / total * 100).round()}%',
             color: const Color(0xFFC61100),
             radius: chartRadius,
             titleStyle: chartTitleStyle,

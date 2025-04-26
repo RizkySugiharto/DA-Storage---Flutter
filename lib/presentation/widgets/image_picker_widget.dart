@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:da_cashier/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -119,6 +119,7 @@ class ImagePickerWidget extends StatelessWidget {
     required ImageSource imageSource,
   }) {
     return Material(
+      color: ColorsConstants.white,
       child: InkWell(
         onTap: () {
           _selectedSource = imageSource;

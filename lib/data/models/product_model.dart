@@ -1,5 +1,5 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/models/category_model.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/models/category_model.dart';
 import 'package:flutter/material.dart';
 
 class Product {
@@ -8,14 +8,14 @@ class Product {
   final Category category;
   final int price;
   final int stock;
-  final DateTime lastUpdated;
+  final DateTime updatedAt;
   static final none = Product(
     id: -1,
     name: 'None',
     category: Category(id: -1, name: 'None', description: ''),
     price: 0,
     stock: 0,
-    lastUpdated: DateTime(0),
+    updatedAt: DateTime(0),
   );
 
   Product({
@@ -24,7 +24,7 @@ class Product {
     required this.category,
     required this.price,
     required this.stock,
-    required this.lastUpdated,
+    required this.updatedAt,
   });
 
   static Product fromJSON(Map<String, dynamic> json) {
@@ -37,14 +37,14 @@ class Product {
       name: json['name'] ?? '',
       price: json['price'] ?? 0,
       stock: json['stock'] ?? 0,
-      lastUpdated: DateTime.parse(json['updated_at'] ?? '00-00-00'),
+      updatedAt: DateTime.parse(json['updated_at'] ?? '00-00-00'),
     );
   }
 
   StockLevelEnum getStockLevel() {
     if (stock <= 0) {
       return StockLevelEnum.empty;
-    } else if (stock <= 10) {
+    } else if (stock < 10) {
       return StockLevelEnum.low;
     } else {
       return StockLevelEnum.normal;

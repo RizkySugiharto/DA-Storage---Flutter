@@ -1,7 +1,7 @@
-import 'package:da_cashier/data/constants/route_constants.dart';
-import 'package:da_cashier/data/static/account_static.dart';
+import 'package:da_storage/data/constants/route_constants.dart';
+import 'package:da_storage/data/static/account_static.dart';
 import 'package:flutter/material.dart';
-import 'package:da_cashier/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FloatingAddButtonWidget extends StatefulWidget {
@@ -70,11 +70,11 @@ class _FloatingAddButtonWidgetState extends State<FloatingAddButtonWidget>
                       onPressed: () {
                         Navigator.pushNamed(
                           context,
-                          RouteConstants.createTransaction,
+                          RouteConstants.addTransaction,
                         );
                       },
                       icon: Icons.shopping_cart,
-                      label: 'Create Transaction',
+                      label: 'Add Transaction',
                     ),
                     ...(AccountStatic.isAdmin()
                         ? [
@@ -107,6 +107,26 @@ class _FloatingAddButtonWidgetState extends State<FloatingAddButtonWidget>
                             },
                             icon: Icons.category,
                             label: 'Add Category',
+                          ),
+                          _buildAddItem(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                RouteConstants.addSupplier,
+                              );
+                            },
+                            icon: Icons.warehouse,
+                            label: 'Add Supplier',
+                          ),
+                          _buildAddItem(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                RouteConstants.addCustomer,
+                              );
+                            },
+                            icon: Icons.person,
+                            label: 'Add Customer',
                           ),
                         ]
                         : []),

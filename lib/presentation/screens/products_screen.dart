@@ -1,17 +1,17 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/models/category_model.dart';
-import 'package:da_cashier/data/models/product_model.dart';
-import 'package:da_cashier/data/providers/categories_api.dart';
-import 'package:da_cashier/data/providers/products_api.dart';
-import 'package:da_cashier/presentation/widgets/filters_dialog_widget.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/product_list_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
-import 'package:da_cashier/presentation/widgets/search_bar_widget.dart';
-import 'package:da_cashier/presentation/widgets/sorts_dialog_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+
+import 'package:da_storage/data/models/category_model.dart';
+import 'package:da_storage/data/models/product_model.dart';
+import 'package:da_storage/data/providers/categories_api.dart';
+import 'package:da_storage/data/providers/products_api.dart';
+import 'package:da_storage/presentation/widgets/filters_dialog_widget.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/product_list_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
+import 'package:da_storage/presentation/widgets/search_bar_widget.dart';
+import 'package:da_storage/presentation/widgets/sorts_dialog_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -46,7 +46,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
     super.dispose();
   }
 
-  void _loadAllProducts() async {
+  Future<void> _loadAllProducts() async {
+    setState(() {
+      isLoading = true;
+    });
+
     _products = await ProductsApi.getAllProducts(
       search: _searchController.text,
       filterStockLevel:
@@ -79,10 +83,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
               }[_crrntSortings['Sort Order']?.first]
               : '',
     );
-    setState(() {});
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
-  void _fetchAllCategories() async {
+  Future<void> _fetchAllCategories() async {
     setState(() {
       isLoading = true;
     });
@@ -103,6 +110,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
     return Category.none;
   }
 
+  Future<void> _onRefresh() async {
+    await _loadAllProducts();
+    await _fetchAllCategories();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,37 +125,40 @@ class _ProductsScreenState extends State<ProductsScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ScreenLabelWidget(
-                          label: 'All Products',
-                          actionButtons: [
-                            _buildFilterIconButton(),
-                            _buildSortIconButton(),
-                          ],
-                        ),
-                        SearchBarWidget(
-                          searchController: _searchController,
-                          hintText: 'Search items....',
-                          onSubmitted: (submitted) {
-                            _loadAllProducts();
-                          },
-                        ),
-                        isLoading
-                            ? Padding(
-                              padding: const EdgeInsets.all(32.0),
-                              child: Center(child: CircularProgressIndicator()),
-                            )
-                            : ProductListWidget(products: _products),
-                        _buildStockLegends(),
-                      ],
+                  child: RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ScreenLabelWidget(
+                            label: 'All Products',
+                            actionButtons: [
+                              _buildFilterIconButton(),
+                              _buildSortIconButton(),
+                            ],
+                          ),
+                          SearchBarWidget(
+                            searchController: _searchController,
+                            hintText: 'Search items....',
+                            onSubmitted: (submitted) {
+                              _loadAllProducts();
+                            },
+                          ),
+                          isLoading
+                              ? Padding(
+                                padding: const EdgeInsets.all(32.0),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                              : ProductListWidget(products: _products),
+                          _buildStockLegends(),
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:da_cashier/data/models/product_model.dart';
-import 'package:da_cashier/data/utils/api_utils.dart';
+import 'package:da_storage/data/models/product_model.dart';
+import 'package:da_storage/data/utils/api_utils.dart';
 import 'package:rest_api_client/rest_api_client.dart';
 
 class ProductsApi {

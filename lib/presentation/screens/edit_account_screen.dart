@@ -1,18 +1,20 @@
 import 'dart:io';
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/models/account_model.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
-import 'package:da_cashier/presentation/widgets/confirmation_buttons_widget.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/input_avatar_widget.dart';
-import 'package:da_cashier/presentation/widgets/input_select_widget.dart';
-import 'package:da_cashier/presentation/widgets/input_text_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/models/account_model.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/providers/accounts_api.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/presentation/widgets/confirmation_buttons_widget.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/input_avatar_widget.dart';
+import 'package:da_storage/presentation/widgets/input_select_widget.dart';
+import 'package:da_storage/presentation/widgets/input_text_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class EditAccountScreen extends StatefulWidget {
   const EditAccountScreen({super.key});
@@ -22,46 +24,103 @@ class EditAccountScreen extends StatefulWidget {
 }
 
 class _EditAccountScreenState extends State<EditAccountScreen> {
-  late final _nameController = TextEditingController(text: account.name);
-  late final _emailController = TextEditingController(text: account.email);
+  late final _nameController = TextEditingController(text: _account.name);
+  late final _emailController = TextEditingController(text: _account.email);
   late final _passwordController = TextEditingController();
-  late String? _selectedRole = account.getRoleAsString();
-  late ImageProvider? _avatarImage = NetworkImage(account.avatarUrl);
-
-  final account = Account(
-    id: 1,
-    avatarUrl:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNt9UpcsobJNOGFHPeBt-88iRmqjflBnIjhw&s',
-    name: 'Udin Surudin',
-    email: 'udinsurudin12345@gmail.com',
-    role: AccountRole.admin,
+  late String? _selectedRole = _account.getRoleAsString();
+  File? _selectedAvatarFile;
+  late ImageProvider? _avatarImage = CachedNetworkImageProvider(
+    _account.avatarUrl,
   );
+  bool _isLoading = false;
+  Account _account = Account.none;
 
-  void _onAvatarSelected(File image) {
-    setState(() {
-      _avatarImage = FileImage(image);
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      final account = ModalRoute.of(context)!.settings.arguments as Account;
+      _fetchAccount(account.id);
     });
   }
 
-  void _onConfirmPressed(BuildContext context) {
-    AlertBannerUtils.popWithAlertBanner(
-      context,
-      message: "Successfully edit the account",
-      alertType: AlertBannerType.success,
+  void _onConfirmPressed() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        (_selectedRole?.isEmpty ?? false)) {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Name, email, and role fields are required to fill",
+        alertType: AlertBannerType.error,
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final newAccount = await AccountsApi.put(
+      id: _account.id,
+      avatarFile: _selectedAvatarFile,
+      name: _nameController.text,
+      email: _emailController.text,
+      role:
+          {
+            'Admin': AccountRole.admin,
+            'Staff': AccountRole.staff,
+          }[_selectedRole] ??
+          AccountRole.staff,
+      password:
+          _passwordController.text.isNotEmpty ? _passwordController.text : null,
     );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (newAccount != Account.none) {
+      AlertBannerUtils.popWithAlertBanner(
+        context,
+        message: "Successfully edit the account. Refresh to see the changes.",
+        alertType: AlertBannerType.success,
+      );
+    } else {
+      AlertBannerUtils.showAlertBanner(
+        context,
+        message: "Failed to edit the account.",
+        alertType: AlertBannerType.error,
+      );
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  void _onCancelPressed(BuildContext context) {
-    Navigator.pop(context, false);
+  void _onCancelPressed() {
+    Navigator.pop(context);
   }
 
-  void _fetchAccount(int accountId) {}
+  void _fetchAccount(int accountId) async {
+    _account = await AccountsApi.getSingleAccount(accountId);
+    setState(() {
+      _avatarImage = CachedNetworkImageProvider(_account.avatarUrl);
+      _nameController.text = _account.name;
+      _emailController.text = _account.email;
+      _selectedRole = _account.getRoleAsString();
+    });
+  }
+
+  void _onImageSelected(File selectedImage) {
+    _selectedAvatarFile = selectedImage;
+    setState(() {
+      _avatarImage = FileImage(selectedImage);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final accountId = ModalRoute.of(context)!.settings.arguments as int;
-    _fetchAccount(accountId);
-
     return Scaffold(
       backgroundColor: ColorsConstants.lightGrey,
       body: SafeArea(
@@ -70,10 +129,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -84,8 +140,9 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                         ConfirmationButtonsWidget(
                           confirmLabel: 'Save',
                           cancelLabel: 'Cancel',
-                          onConfirmPressed: () => _onConfirmPressed(context),
-                          onCancelPressed: () => _onCancelPressed(context),
+                          isLoading: _isLoading,
+                          onConfirmPressed: () => _onConfirmPressed(),
+                          onCancelPressed: () => _onCancelPressed(),
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -123,11 +180,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         children: [
           InputAvatarWidget(
             image: _avatarImage,
-            onImageSelected: _onAvatarSelected,
+            onImageSelected: _onImageSelected,
           ),
           InputTextWidget(
             label: 'Account ID',
-            textController: TextEditingController(text: account.id.toString()),
+            textController: TextEditingController(text: _account.id.toString()),
             hint: "Accounts's ID",
             readOnly: true,
           ),

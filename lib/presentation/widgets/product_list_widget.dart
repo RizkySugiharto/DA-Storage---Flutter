@@ -1,12 +1,11 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/route_constants.dart';
-import 'package:da_cashier/data/models/account_model.dart';
-import 'package:da_cashier/data/models/product_model.dart';
-import 'package:da_cashier/data/notifiers/alert_notifiers.dart';
-import 'package:da_cashier/data/providers/products_api.dart';
-import 'package:da_cashier/data/static/account_static.dart';
-import 'package:da_cashier/presentation/utils/alert_banner_utils.dart';
-import 'package:da_cashier/presentation/widgets/more_button_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/constants/route_constants.dart';
+import 'package:da_storage/data/models/product_model.dart';
+import 'package:da_storage/data/notifiers/alert_notifiers.dart';
+import 'package:da_storage/data/providers/products_api.dart';
+import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
+import 'package:da_storage/presentation/utils/barcode_utils.dart';
+import 'package:da_storage/presentation/widgets/more_button_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -28,10 +27,14 @@ class ProductListWidget extends StatefulWidget {
 }
 
 class _ProductListWidgetState extends State<ProductListWidget> {
-  late final _selectedProducts = <Product>{};
+  final _selectedProducts = <Product>{};
 
   void _onDeletePressed(int productId) async {
     final isSuccess = await ProductsApi.delete(productId);
+
+    if (!mounted) {
+      return;
+    }
 
     if (isSuccess) {
       AlertBannerUtils.showAlertBanner(
@@ -140,9 +143,12 @@ class _ProductListWidgetState extends State<ProductListWidget> {
                       ),
                     ],
                   ),
-                  AccountStatic.isAdmin() && !widget.isSelectable
+                  !widget.isSelectable
                       ? MoreButtonWidget(
                         enableBarcodeOptions: true,
+                        barcodeValue: BarcodeUtils.productIdToBarcodeValue(
+                          product.id,
+                        ),
                         onEditPressed: () {
                           Navigator.pushNamed(
                             context,
@@ -168,7 +174,7 @@ class _ProductListWidgetState extends State<ProductListWidget> {
                     ),
                   ),
                   Text(
-                    'Updated: ${dateFormat.format(product.lastUpdated)}',
+                    'Updated: ${dateFormat.format(product.updatedAt)}',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,

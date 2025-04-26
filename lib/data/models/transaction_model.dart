@@ -71,6 +71,15 @@ class Transaction2 {
         TransactionType.return_;
   }
 
+  static String getStringJSONFromType(TransactionType type) {
+    return {
+          TransactionType.purchase: 'purchase',
+          TransactionType.sale: 'sale',
+          TransactionType.return_: 'return',
+        }[type] ??
+        'purchase';
+  }
+
   String? getTypeAsString() {
     return {
       TransactionType.purchase: 'Purchase',
@@ -81,16 +90,16 @@ class Transaction2 {
 
   Color? getForegroundColor() {
     return {
-      TransactionType.purchase: Colors.red,
-      TransactionType.sale: Colors.green,
+      TransactionType.purchase: Colors.green,
+      TransactionType.sale: Colors.red,
       TransactionType.return_: Colors.blue,
     }[type];
   }
 
   Color? getBackgroundColor() {
     return {
-      TransactionType.purchase: Colors.redAccent.withValues(alpha: 0.2),
-      TransactionType.sale: Colors.lightGreenAccent.withValues(alpha: 0.4),
+      TransactionType.purchase: Colors.lightGreenAccent.withValues(alpha: 0.4),
+      TransactionType.sale: Colors.redAccent.withValues(alpha: 0.2),
       TransactionType.return_: Colors.lightBlueAccent.withValues(alpha: 0.2),
     }[type];
   }

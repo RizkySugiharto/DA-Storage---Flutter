@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:da_cashier/data/models/account_model.dart';
-import 'package:da_cashier/data/utils/api_utils.dart';
-import 'package:da_cashier/main.dart';
-import 'package:dio/dio.dart';
+import 'package:da_storage/data/models/account_model.dart';
+import 'package:da_storage/data/utils/api_utils.dart';
+import 'package:da_storage/main.dart';
+import 'package:rest_api_client/rest_api_client.dart';
 import 'package:path_provider/path_provider.dart';
 
 class AuthApi {
@@ -24,7 +24,7 @@ class AuthApi {
       data: formData,
     );
 
-    if (response.statusCode == HttpStatus.ok) {
+    if (response.response?.statusCode == HttpStatus.ok) {
       final token = response.response?.data['token'];
       ApiUtils.setClientToken(token);
       saveTokenToFile(token);
@@ -44,7 +44,7 @@ class AuthApi {
     final response = await ApiUtils.getClient().get('/auth/me');
     final data = response.response?.data;
 
-    if (response.statusCode == HttpStatus.ok) {
+    if (response.response?.statusCode == HttpStatus.ok) {
       return Account(
         id: data['id'],
         avatarUrl: data['avatar_url'],
@@ -65,8 +65,8 @@ class AuthApi {
     final formData = FormData.fromMap({
       'avatar_file':
           avatarFile != null
-              ? await MultipartFile.fromFile(
-                avatarFile.path,
+              ? MultipartFile.fromBytes(
+                await avatarFile.readAsBytes(),
                 filename: avatarFile.name,
               )
               : null,
@@ -76,7 +76,7 @@ class AuthApi {
     final response = await ApiUtils.getClient().put('/auth/me', data: formData);
     final resData = response.response?.data as Map<String, dynamic>;
 
-    if (response.statusCode == HttpStatus.ok) {
+    if (response.response?.statusCode == HttpStatus.ok) {
       return Account(
         id: resData['id'],
         avatarUrl: resData['avatar_url'],

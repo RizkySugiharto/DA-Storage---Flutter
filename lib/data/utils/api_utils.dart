@@ -1,17 +1,20 @@
 import 'dart:io';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rest_api_client/rest_api_client.dart';
 
 class ApiUtils {
   static late RestApiClient client;
   static bool isTokenLoaded = false;
+  static String hostname = dotenv.get(
+    'BACKEND_HOSTNAME',
+    fallback: 'http://localhost:3000',
+  );
 
   static Future<void> init() async {
     client = RestApiClientImpl(
-      options: RestApiClientOptions(
-        baseUrl: 'https://positive-emlynn-daemonz-org-6d211396.koyeb.app/v1',
-      ),
+      options: RestApiClientOptions(baseUrl: '$hostname/v1'),
     );
 
     await loadClientToken();
@@ -49,5 +52,9 @@ class ApiUtils {
     } catch (e) {
       return;
     }
+  }
+
+  static String getDefaultAvatarUrl() {
+    return '$hostname/avatars/default.png';
   }
 }

@@ -1,17 +1,20 @@
-import 'package:da_cashier/data/constants/colors_constants.dart';
-import 'package:da_cashier/data/constants/placeholder_constants.dart';
-import 'package:da_cashier/data/models/category_model.dart';
-import 'package:da_cashier/data/models/product_model.dart';
-import 'package:da_cashier/presentation/widgets/confirmation_buttons_widget.dart';
-import 'package:da_cashier/presentation/widgets/filters_dialog_widget.dart';
-import 'package:da_cashier/presentation/widgets/floating_add_button_widget.dart';
-import 'package:da_cashier/presentation/widgets/header_widget.dart';
-import 'package:da_cashier/presentation/widgets/navbar_widget.dart';
-import 'package:da_cashier/presentation/widgets/product_list_widget.dart';
-import 'package:da_cashier/presentation/widgets/screen_label_widget.dart';
-import 'package:da_cashier/presentation/widgets/search_bar_widget.dart';
-import 'package:da_cashier/presentation/widgets/sorts_dialog_widget.dart';
+import 'package:da_storage/data/constants/colors_constants.dart';
+
+import 'package:da_storage/data/models/category_model.dart';
+import 'package:da_storage/data/models/product_model.dart';
+import 'package:da_storage/data/providers/categories_api.dart';
+import 'package:da_storage/data/providers/products_api.dart';
+import 'package:da_storage/presentation/widgets/confirmation_buttons_widget.dart';
+import 'package:da_storage/presentation/widgets/filters_dialog_widget.dart';
+import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
+import 'package:da_storage/presentation/widgets/header_widget.dart';
+import 'package:da_storage/presentation/widgets/navbar_widget.dart';
+import 'package:da_storage/presentation/widgets/product_list_widget.dart';
+import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
+import 'package:da_storage/presentation/widgets/search_bar_widget.dart';
+import 'package:da_storage/presentation/widgets/sorts_dialog_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SelectProductsScreen extends StatefulWidget {
@@ -22,51 +25,91 @@ class SelectProductsScreen extends StatefulWidget {
 }
 
 class _SelectProductsScreenState extends State<SelectProductsScreen> {
-  final TextEditingController _searchController = TextEditingController();
   final Set<Product> _selectedProducts = <Product>{};
-  final List<Product> _products = [
-    Product(
-      id: 1,
-      name: 'Coffe Cup',
-      category: Category(
-        id: 1,
-        name: 'Groceries & Food Items',
-        description: '',
-      ),
-      price: 5000,
-      stock: 50,
-      lastUpdated: DateTime(2025, 3, 21),
-    ),
-    Product(
-      id: 2,
-      name: 'Fried Rice',
-      category: Category(
-        id: 1,
-        name: 'Groceries & Food Items',
-        description: '',
-      ),
-      price: 12000,
-      stock: 5,
-      lastUpdated: DateTime(2025, 3, 21),
-    ),
-    Product(
-      id: 3,
-      name: 'Egg',
-      category: Category(
-        id: 1,
-        name: 'Groceries & Food Items',
-        description: '',
-      ),
-      price: 3000,
-      stock: 320,
-      lastUpdated: DateTime(2025, 3, 21),
-    ),
-  ];
+  final TextEditingController _searchController = TextEditingController();
+  List<Product> _products = [];
+  bool _isLoading = true;
+  Map<String, Set<String>> _crrntFilters = {};
+  Map<String, Set<String>> _crrntSortings = {};
+  List<Category> _availableCategories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _loadAllProducts();
+      _fetchAllCategories();
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAllProducts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    _products = await ProductsApi.getAllProducts(
+      search: _searchController.text,
+      filterStockLevel:
+          _crrntFilters['Stock Level']
+              ?.map((item) => item.toLowerCase())
+              .toList(),
+      filterCategoryId:
+          _crrntFilters['Category']
+              ?.map((item) => _getCategoryByName(item).id)
+              .toList(),
+      filterUpdatedDate:
+          (_crrntFilters['Updated Date']?.isNotEmpty ?? false)
+              ? _crrntFilters['Updated Date']?.first.toLowerCase()
+              : '',
+      sortBy:
+          (_crrntSortings['Sort By']?.isNotEmpty ?? false)
+              ? {
+                'Product ID': 'id',
+                'Name': 'name',
+                'Price': 'price',
+                'Stock': 'stock',
+                'Updated Date': 'updated_at',
+              }[_crrntSortings['Sort By']?.first]
+              : '',
+      sortOrder:
+          (_crrntSortings['Sort Order']?.isNotEmpty ?? false)
+              ? {
+                'Ascending': 'asc',
+                'Descending': 'desc',
+              }[_crrntSortings['Sort Order']?.first]
+              : '',
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _fetchAllCategories() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    _availableCategories = await CategoriesApi.getAllCategories();
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Category _getCategoryByName(String name) {
+    for (Category category in _availableCategories) {
+      if (category.name == name) {
+        return category;
+      }
+    }
+    return Category.none;
   }
 
   void _onConfirmPressed() {
@@ -75,6 +118,11 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
 
   void _onCancelPressed() {
     Navigator.pop(context);
+  }
+
+  Future<void> _onRefresh() async {
+    await _loadAllProducts();
+    await _fetchAllCategories();
   }
 
   @override
@@ -87,38 +135,46 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
           children: [
             Column(
               children: [
-                HeaderWidget(
-                  username: PlaceholderConstants.username,
-                  avatarUrl: PlaceholderConstants.avatarUrl,
-                ),
+                HeaderWidget(),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ScreenLabelWidget(
-                          label: 'Select Products',
-                          actionButtons: [
-                            _buildFilterIconButton(),
-                            _buildSortIconButton(),
-                          ],
-                        ),
-                        SearchBarWidget(
-                          searchController: _searchController,
-                          hintText: 'Search items....',
-                          onSubmitted: (submitted) {},
-                        ),
-                        ProductListWidget(
-                          products: _products,
-                          isSelectable: true,
-                          onChanged: (selectedProducts) {
-                            setState(() {
-                              _selectedProducts.clear();
-                              _selectedProducts.addAll(selectedProducts);
-                            });
-                          },
-                        ),
-                      ],
+                  child: RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ScreenLabelWidget(
+                            label: 'Select Products',
+                            actionButtons: [
+                              _buildFilterIconButton(),
+                              _buildSortIconButton(),
+                            ],
+                          ),
+                          SearchBarWidget(
+                            searchController: _searchController,
+                            hintText: 'Search items....',
+                            onSubmitted: (submitted) {},
+                          ),
+                          _isLoading
+                              ? Padding(
+                                padding: const EdgeInsets.all(32.0),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                              : ProductListWidget(
+                                products: _products,
+                                isSelectable: true,
+                                onChanged: (selectedProducts) {
+                                  setState(() {
+                                    _selectedProducts.clear();
+                                    _selectedProducts.addAll(selectedProducts);
+                                  });
+                                },
+                              ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -143,9 +199,15 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
             return FiltersDialogWidget(
               dialogContext: dialogContext,
               title: 'Filters',
+              currentFilters: _crrntFilters.isNotEmpty ? _crrntFilters : null,
               filterSections: {
                 'Stock Level': FilterDialogSectionData(
                   filterList: ['Normal', 'Low', 'Empty'],
+                  isChoice: false,
+                ),
+                'Category': FilterDialogSectionData(
+                  filterList:
+                      _availableCategories.map((item) => item.name).toList(),
                   isChoice: false,
                 ),
                 'Updated Date': FilterDialogSectionData(
@@ -161,6 +223,12 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
                   ],
                   isChoice: true,
                 ),
+              },
+              onFilterSelected: (selected, value, crrnt) {
+                _crrntFilters = crrnt;
+              },
+              onDialogClosed: () {
+                _loadAllProducts();
               },
             );
           },
@@ -180,6 +248,8 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
             return SortsDialogWidget(
               dialogContext: dialogContext,
               title: 'Sorts',
+              currentSortings:
+                  _crrntSortings.isNotEmpty ? _crrntSortings : null,
               sortSections: {
                 'Sort Order': ['Ascending', 'Descending'],
                 'Sort By': [
@@ -189,6 +259,12 @@ class _SelectProductsScreenState extends State<SelectProductsScreen> {
                   'Stock',
                   'Updated Date',
                 ],
+              },
+              onSortSelected: (selected, value, crrnt) {
+                _crrntSortings = crrnt;
+              },
+              onDialogClosed: () {
+                _loadAllProducts();
               },
             );
           },

@@ -1,4 +1,4 @@
-package com.example.da_cashier
+package com.example.da_storage
 
 import io.flutter.embedding.android.FlutterActivity
 

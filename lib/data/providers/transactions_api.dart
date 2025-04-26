@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
-
-import 'package:da_cashier/data/models/transaction_model.dart';
-import 'package:da_cashier/data/utils/api_utils.dart';
+import 'package:da_storage/data/models/purchased_product_model.dart';
+import 'package:da_storage/data/models/transaction_model.dart';
+import 'package:da_storage/data/utils/api_utils.dart';
+import 'package:rest_api_client/rest_api_client.dart';
 
 class TransactionsApi {
   static Future<List<Transaction2>> getAllTransactions({
@@ -44,9 +46,56 @@ class TransactionsApi {
       return [];
     }
 
-    final resData = response.response?.data as List<Map<String, dynamic>>;
+    final resData = response.response?.data as List<dynamic>;
     final data = resData.map((item) => Transaction2.fromJSON(item)).toList();
 
     return data;
+  }
+
+  static Future<Map<String, dynamic>> getSingleTransaction(int id) async {
+    final response = await ApiUtils.getClient().get('/transactions/$id');
+    final resData = response.response?.data as Map<String, dynamic>;
+
+    if (response.response?.statusCode != HttpStatus.ok) {
+      return {};
+    }
+
+    return resData;
+  }
+
+  static Future<bool> post({
+    int? supplierId,
+    int? customerId,
+    required TransactionType type,
+    required String stockChangeType,
+    required Set<PurchasedProduct> items,
+    required int totalCost,
+  }) async {
+    final data = {
+      'supplier_id': supplierId,
+      'customer_id': customerId,
+      'type': Transaction2.getStringJSONFromType(type),
+      'stock_change_type': stockChangeType,
+      'items':
+          items
+              .map(
+                (item) => {
+                  'product_id': item.productId,
+                  'stock': item.currentStock,
+                  'unit_name': item.name,
+                  'unit_price': item.price,
+                  'quantity': item.quantity,
+                },
+              )
+              .toList(),
+      'total_cost': totalCost,
+    };
+    final response = await ApiUtils.getClient().post(
+      '/transactions',
+      data: jsonEncode(data),
+      options: RestApiClientRequestOptions(contentType: 'application/json'),
+    );
+
+    return response.response?.statusCode == HttpStatus.resetContent;
   }
 }
