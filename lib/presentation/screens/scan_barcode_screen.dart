@@ -3,6 +3,7 @@ import 'package:da_storage/data/constants/route_constants.dart';
 import 'package:da_storage/data/models/product_model.dart';
 import 'package:da_storage/data/notifiers/alert_notifiers.dart';
 import 'package:da_storage/data/providers/products_api.dart';
+import 'package:da_storage/data/static/account_static.dart';
 import 'package:da_storage/presentation/utils/alert_banner_utils.dart';
 import 'package:da_storage/presentation/utils/barcode_utils.dart';
 import 'package:da_storage/presentation/widgets/confirmation_buttons_widget.dart';
@@ -300,28 +301,30 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _isLoading
-              ? CircularProgressIndicator()
-              : Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  _buildActionButton(
-                    label: 'Update',
-                    foregroundColor: ColorsConstants.blue,
-                    backgroundColor: ColorsConstants.blue.withValues(
-                      alpha: 0.2,
-                    ),
-                    onPressed: () => _onUpdatePressed(),
-                  ),
-                  _buildActionButton(
-                    label: 'Delete',
-                    foregroundColor: Colors.red,
-                    backgroundColor: Colors.red.withValues(alpha: 0.2),
-                    onPressed: () => _onDeletePressed(),
-                  ),
-                ],
-              ),
+          AccountStatic.isAdmin()
+              ? (_isLoading
+                  ? CircularProgressIndicator()
+                  : Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _buildActionButton(
+                        label: 'Update',
+                        foregroundColor: ColorsConstants.blue,
+                        backgroundColor: ColorsConstants.blue.withValues(
+                          alpha: 0.2,
+                        ),
+                        onPressed: () => _onUpdatePressed(),
+                      ),
+                      _buildActionButton(
+                        label: 'Delete',
+                        foregroundColor: Colors.red,
+                        backgroundColor: Colors.red.withValues(alpha: 0.2),
+                        onPressed: () => _onDeletePressed(),
+                      ),
+                    ],
+                  ))
+              : const SizedBox(),
         ],
       ),
     );
