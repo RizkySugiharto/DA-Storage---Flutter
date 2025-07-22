@@ -1,5 +1,7 @@
 # DA Storage
 
+![License: All Rights Reserved](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
+
 Flutter App for Inventory Managements.
 
 ## Getting Started
@@ -54,4 +56,12 @@ Command:
 ```
 flutter run
 ```
+
+## License
+
+This project is not open-source and is protected by copyright.
+
+You are **not allowed** to use, copy, modify, distribute, or sell any part of this project without **explicit written permission** from the author.
+
+© 2025 RizkySugiharto — All Rights Reserved.
 
