@@ -1,6 +1,6 @@
 # DA Storage
 
-![License: All Rights Reserved](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
+[![License: CC BY‑NC‑ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 
 Flutter App for Inventory Managements.
 
@@ -59,9 +59,9 @@ flutter run
 
 ## License
 
-This project is not open-source and is protected by copyright.
+© 2025 RizkySugiharto
 
-You are **not allowed** to use, copy, modify, distribute, or sell any part of this project without **explicit written permission** from the author.
+This work is licensed under a [Creative Commons Attribution‑NonCommercial‑NoDerivatives 4.0 International License](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 
-© 2025 RizkySugiharto — All Rights Reserved.
+🔒 You’re free to share this code (non-commercially), but you **cannot modify**, **distribute**, or **use it for business** without permission.
 
