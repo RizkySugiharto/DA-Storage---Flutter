@@ -61,4 +61,40 @@ class StatsApi {
 
     return data;
   }
+
+  static Future<List<Map<String, dynamic>>> getTotalSales({
+    String? dateRange,
+  }) async {
+    final response = await ApiUtils.getClient().get(
+      '/stats/total-sales',
+      queryParameters: {'date_range': dateRange},
+    );
+    final resData = response.response?.data as List<dynamic>;
+    final List<Map<String, dynamic>> data = [];
+
+    for (var item in resData) {
+      data.add({'index': item['index'] ?? 0, 'sales': item['sales'] ?? 0});
+    }
+
+    return data;
+  }
+
+  static Future<Map<String, Object>> getMostUsedProductStock({
+    String? dateRange,
+  }) async {
+    final response = await ApiUtils.getClient().get(
+      '/stats/most-used-product-stock',
+      queryParameters: {'date_range': dateRange},
+    );
+    final resData = response.response?.data as Map<String, dynamic>;
+    String productName = "None";
+    final List<Map<String, int>> stockLogs = [];
+
+    productName = resData["product"]["name"] ?? "None";
+    for (var item in resData["stock_logs"]) {
+      stockLogs.add({'index': item['index'] ?? 0, 'stock': item['stock'] ?? 0});
+    }
+
+    return {"product_name": productName, "stock_logs": stockLogs};
+  }
 }

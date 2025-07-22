@@ -278,7 +278,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushNamed(context, RouteConstants.reports);
+              },
               child: Text(
                 'View Reports',
                 style: GoogleFonts.poppins(

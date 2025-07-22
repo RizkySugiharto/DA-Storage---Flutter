@@ -56,10 +56,11 @@ Future main() async {
 }
 
 class MyApp extends StatelessWidget {
+  static bool isFirstInternetValidation = true;
+
   const MyApp({super.key});
 
   // This widget is the root of your application.
-
   @override
   Widget build(BuildContext context) {
     Permission.manageExternalStorage.request().then((status) {
@@ -169,6 +170,11 @@ class MyApp extends StatelessWidget {
                 return InternetConnectivityListener(
                   connectivityListener: (context, hasInternetAccess) {
                     if (!context.mounted) {
+                      return;
+                    }
+
+                    if (isFirstInternetValidation) {
+                      isFirstInternetValidation = false;
                       return;
                     }
 

@@ -22,7 +22,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool isLoading = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -36,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       setState(() {
-        isLoading = true;
+        _isLoading = true;
       });
 
       await ApiUtils.loadClientToken();
@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!ApiUtils.isLoggedIn()) {
         setState(() {
-          isLoading = false;
+          _isLoading = false;
         });
         return;
       }
@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (account == Account.none) {
         AuthApi.logout();
         setState(() {
-          isLoading = false;
+          _isLoading = false;
         });
         return;
       }
@@ -73,12 +73,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onLoginPressed() async {
-    if (!context.mounted || isLoading) {
+    if (!context.mounted || _isLoading) {
       return;
     }
 
     setState(() {
-      isLoading = true;
+      _isLoading = true;
     });
 
     if (_emailController.text.isEmpty) {
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
         alertType: AlertBannerType.error,
       );
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
       return;
     }
@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
         alertType: AlertBannerType.error,
       );
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
       return;
     }
@@ -119,6 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
         message: 'Email or password isn\'t valid',
         alertType: AlertBannerType.error,
       );
+      setState(() {
+        _isLoading = false;
+      });
+      return;
     }
 
     final account = await AuthApi.getMe();
@@ -132,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
     navIndexNotifier.value = 0;
 
     setState(() {
-      isLoading = false;
+      _isLoading = false;
     });
   }
 
@@ -208,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         child:
-                            isLoading
+                            _isLoading
                                 ? Center(
                                   child: CircularProgressIndicator(
                                     color: ColorsConstants.white,

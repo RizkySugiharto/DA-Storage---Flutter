@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:da_storage/data/constants/colors_constants.dart';
+import 'package:da_storage/data/providers/stats_api.dart';
+
 import 'package:da_storage/presentation/widgets/floating_add_button_widget.dart';
 import 'package:da_storage/presentation/widgets/header_widget.dart';
 import 'package:da_storage/presentation/widgets/input_select_widget.dart';
@@ -8,6 +10,7 @@ import 'package:da_storage/presentation/widgets/navbar_widget.dart';
 import 'package:da_storage/presentation/widgets/screen_label_widget.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -20,13 +23,20 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   final _numFormat = NumberFormat.decimalPattern('ID-id');
-  final _lowStockItems = 12;
-  final _totalItems = 234;
-  final _totalTransactions = 12345;
-  late final _totalSales = _fetchTotalSales();
-  late final _transactions = _fetchTransactions();
-  late final _mostUsageProductName = _fetchMostUsageProductName();
-  late final _mostUsageProductStock = _fetchMostUsageProductStock();
+  int _lowStockItems = 0;
+  int _totalItems = 0;
+  int _totalTransactions = 0;
+  List<Map<String, dynamic>> _totalSales = [
+    {'index': 0, 'sales': 0},
+  ];
+  List<Map<String, int>> _transactions = [
+    {'index': 0, 'purchase': 0, 'sale': 0, 'return': 0},
+  ];
+  String _mostUsageProductName = "None";
+  List<Map<String, int>> _mostUsageProductStock = [
+    {'index': 0, 'stock': 0},
+  ];
+  bool _isLoading = false;
   late String? _selectedDateRange = _optionsDateRange[1];
   final List<String> _optionsDateRange = [
     'Last Week',
@@ -35,90 +45,80 @@ class _ReportsScreenState extends State<ReportsScreen> {
     'Last 3 Years',
   ];
 
-  List<Map<String, double>> _fetchTotalSales() {
-    return [
-      {"day": 1, "sales": 120},
-      {"day": 2, "sales": 195},
-      {"day": 3, "sales": 150},
-      {"day": 4, "sales": 75},
-      {"day": 5, "sales": 105},
-      {"day": 6, "sales": 155},
-      {"day": 7, "sales": 120},
-      {"day": 8, "sales": 195},
-      {"day": 9, "sales": 55},
-      {"day": 10, "sales": 40},
-      {"day": 11, "sales": 65},
-      {"day": 12, "sales": 80},
-      {"day": 13, "sales": 75},
-      {"day": 14, "sales": 85},
-      {"day": 15, "sales": 75},
-      {"day": 16, "sales": 175},
-      {"day": 17, "sales": 70},
-      {"day": 18, "sales": 115},
-      {"day": 19, "sales": 55},
-      {"day": 20, "sales": 35},
-      {"day": 21, "sales": 95},
-      {"day": 22, "sales": 30},
-      {"day": 23, "sales": 120},
-      {"day": 24, "sales": 75},
-      {"day": 25, "sales": 90},
-      {"day": 26, "sales": 35},
-      {"day": 27, "sales": 115},
-      {"day": 28, "sales": 65},
-      {"day": 29, "sales": 60},
-      {"day": 30, "sales": 115},
-    ];
+  @override
+  void initState() {
+    super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _fetchAllStatsData();
+    });
   }
 
-  List<Map<String, double>> _fetchTransactions() {
-    return [
-      {"day": 1, "completed": 55, "canceled": 20},
-      {"day": 2, "completed": 56, "canceled": 24},
-      {"day": 3, "completed": 36, "canceled": 18},
-      {"day": 4, "completed": 66, "canceled": 26},
-      {"day": 5, "completed": 64, "canceled": 16},
-      {"day": 6, "completed": 84, "canceled": 36},
-      {"day": 7, "completed": 90, "canceled": 37},
-    ];
+  Future<void> _fetchStatsTotalSales() async {
+    final data = await StatsApi.getTotalSales(
+      dateRange: _selectedDateRange?.toLowerCase(),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _totalSales = data;
+    });
   }
 
-  String _fetchMostUsageProductName() {
-    return 'Egg';
+  Future<void> _fetchMostUsageProductStock() async {
+    final data = await StatsApi.getMostUsedProductStock(
+      dateRange: _selectedDateRange?.toLowerCase(),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _mostUsageProductName = data["product_name"] as String;
+      _mostUsageProductStock = data["stock_logs"] as List<Map<String, int>>;
+    });
   }
 
-  List<Map<String, double>> _fetchMostUsageProductStock() {
-    return [
-      {"day": 1, "stock": 120},
-      {"day": 2, "stock": 195},
-      {"day": 3, "stock": 150},
-      {"day": 4, "stock": 75},
-      {"day": 5, "stock": 105},
-      {"day": 6, "stock": 155},
-      {"day": 7, "stock": 120},
-      {"day": 8, "stock": 195},
-      {"day": 9, "stock": 55},
-      {"day": 10, "stock": 40},
-      {"day": 11, "stock": 65},
-      {"day": 12, "stock": 80},
-      {"day": 13, "stock": 75},
-      {"day": 14, "stock": 85},
-      {"day": 15, "stock": 75},
-      {"day": 16, "stock": 175},
-      {"day": 17, "stock": 70},
-      {"day": 18, "stock": 115},
-      {"day": 19, "stock": 55},
-      {"day": 20, "stock": 35},
-      {"day": 21, "stock": 95},
-      {"day": 22, "stock": 30},
-      {"day": 23, "stock": 120},
-      {"day": 24, "stock": 75},
-      {"day": 25, "stock": 90},
-      {"day": 26, "stock": 35},
-      {"day": 27, "stock": 115},
-      {"day": 28, "stock": 65},
-      {"day": 29, "stock": 35},
-      {"day": 30, "stock": 115},
-    ];
+  Future<void> _fetchStatsSummary() async {
+    final summary = await StatsApi.getSummary(
+      dateRange: _selectedDateRange?.toLowerCase(),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _lowStockItems = summary['low_stock_items'] ?? 0;
+      _totalItems = summary['total_items'] ?? 0;
+      _totalTransactions = summary['total_transactions'] ?? 0;
+    });
+  }
+
+  Future<void> _fetchStatsTransactions() async {
+    final data = await StatsApi.getTransactions(
+      dateRange: _selectedDateRange?.toLowerCase(),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _transactions = data;
+    });
+  }
+
+  Future<void> _fetchAllStatsData() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    await _fetchStatsSummary();
+    await _fetchStatsTotalSales();
+    await _fetchStatsTransactions();
+    await _fetchMostUsageProductStock();
+
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   void _onExportPDF() {}
@@ -261,7 +261,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             border: Border.all(color: ColorsConstants.black, width: 1),
           ),
           child: Text(
-            _numFormat.format(value),
+            _isLoading ? '....' : _numFormat.format(value),
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w400,
@@ -274,26 +274,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildTotalSales() {
-    final min =
-        (_totalSales.reduce(
-                  (a, b) => (a['sales'] ?? 0) < (b['sales'] ?? 0) ? a : b,
-                )['sales'] ??
-                0)
-            .toInt();
-    final isMutipleOfThree = min % 3 == 0 ? 1 : 0;
-    final totalSalesDecimalCount =
-        ((min.toString().length - isMutipleOfThree) / 3).floor() * 3;
+    final maxTotalSales = _totalSales.fold(
+      1,
+      (a, b) => a > b['sales']!.toInt() ? a : b['sales']!.toInt(),
+    );
+    final maxXDigits = (log(maxTotalSales) / log(10)).ceilToDouble() + 1;
     final totalSalesSpots =
         _totalSales
             .map(
               (data) => FlSpot(
-                data['day'] ?? 0,
-                data['sales'] ?? 0 / pow(10, totalSalesDecimalCount),
+                data['index'].toDouble() ?? 0,
+                data['sales'].toDouble() ?? 0,
               ),
             )
             .toList();
-    final max = totalSalesSpots.reduce((a, b) => a.y > b.y ? a : b).y;
-    final horizontalSpacing = (max / 7).round();
 
     return Container(
       width: double.infinity,
@@ -324,121 +318,102 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     color: ColorsConstants.black,
                   ),
                 ),
-                TextSpan(
-                  text:
-                      '(x Rp ${_numFormat.format(pow(10, totalSalesDecimalCount))})',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: ColorsConstants.grey,
-                  ),
-                ),
               ],
             ),
           ),
           const SizedBox(height: 28),
-          Container(
-            padding: const EdgeInsets.only(right: 16),
-            width: double.infinity,
-            height: 300,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (value) {
-                    if (value.round() % horizontalSpacing == 0) {
-                      return const FlLine(
-                        color: Colors.grey,
-                        strokeWidth: 1,
-                        dashArray: [5, 3],
-                      );
-                    } else {
-                      return const FlLine(strokeWidth: 0);
-                    }
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: (_totalSales.length / 10).ceil().toDouble(),
-                      getTitlesWidget: (value, meta) {
-                        return SideTitleWidget(
-                          meta: meta,
-                          child: Text(
-                            _numFormat.format(value),
-                            style: GoogleFonts.poppins(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 35,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        if (value.round() % horizontalSpacing == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              _numFormat.format(value),
-                              style: GoogleFonts.poppins(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.right,
-                            ),
-                          );
-                        } else {
-                          return SizedBox();
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    left: BorderSide(color: Colors.black),
-                    bottom: BorderSide(color: Colors.black),
-                  ),
-                ),
-                minX: 1,
-                maxX: totalSalesSpots.length.toDouble(),
-                minY: 0,
-                maxY: max,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: totalSalesSpots,
-                    color: Colors.lightGreen,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
+          _isLoading
+              ? Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Center(child: CircularProgressIndicator()),
+              )
+              : Container(
+                padding: const EdgeInsets.only(right: 16),
+                width: double.infinity,
+                height: 300,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
                       show: true,
-                      color: Colors.lightGreen.withValues(alpha: 0.2),
+                      verticalInterval:
+                          (_totalSales.length / 10).ceil().toDouble(),
                     ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          interval: (_totalSales.length / 10).ceil().toDouble(),
+                          getTitlesWidget: (value, meta) {
+                            return SideTitleWidget(
+                              meta: meta,
+                              child: Text(
+                                _numFormat.format(value),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 5 + 11 * maxXDigits.toDouble(),
+                          getTitlesWidget: (value, meta) {
+                            return SideTitleWidget(
+                              meta: meta,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: Text(
+                                  _numFormat.format(value),
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border(
+                        left: BorderSide(color: Colors.black),
+                        bottom: BorderSide(color: Colors.black),
+                      ),
+                    ),
+                    minX: 1,
+                    maxX: totalSalesSpots.length.toDouble(),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: totalSalesSpots,
+                        color: Colors.lightGreen,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.lightGreen.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
           const SizedBox(height: 14),
         ],
       ),
@@ -446,45 +421,41 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildTransactions() {
-    final minCompleted =
-        (_transactions.reduce(
-                  (a, b) =>
-                      (a['completed'] ?? 0) < (b['completed'] ?? 0) ? a : b,
-                )['completed'] ??
-                0)
-            .toInt();
-    final minCanceled =
-        (_transactions.reduce(
-                  (a, b) => (a['canceled'] ?? 0) < (b['canceled'] ?? 0) ? a : b,
-                )['canceled'] ??
-                0)
-            .toInt();
-    final min = minCompleted > minCanceled ? minCanceled : minCompleted;
-    final isMutipleOfThree = min % 3 == 0 ? 1 : 0;
-    final transactionsDecimalCount =
-        ((min.toString().length - isMutipleOfThree) / 3).floor() * 3;
-    final completedSpots =
+    final purchaseSpots =
         _transactions
             .map(
               (data) => FlSpot(
-                data['day'] ?? 0,
-                data['completed'] ?? 0 / pow(10, transactionsDecimalCount),
+                data['index']?.toDouble() ?? 0,
+                data['purchase']?.toDouble() ?? 0,
               ),
             )
             .toList();
-    final canceledSpots =
+    final saleSpots =
         _transactions
             .map(
               (data) => FlSpot(
-                data['day'] ?? 0,
-                data['canceled'] ?? 0 / pow(10, transactionsDecimalCount),
+                data['index']?.toDouble() ?? 0,
+                data['sale']?.toDouble() ?? 0,
               ),
             )
             .toList();
-    final maxCompleted = completedSpots.reduce((a, b) => a.y > b.y ? a : b).y;
-    final maxCanceled = canceledSpots.reduce((a, b) => a.y > b.y ? a : b).y;
-    final max = maxCompleted > maxCanceled ? maxCompleted : maxCanceled;
-    final horizontalSpacing = (max / 7).round();
+    final returnSpots =
+        _transactions
+            .map(
+              (data) => FlSpot(
+                data['index']?.toDouble() ?? 0,
+                data['return']?.toDouble() ?? 0,
+              ),
+            )
+            .toList();
+    final uniqueSpots = <FlSpot>{
+      ...purchaseSpots,
+      ...saleSpots,
+      ...returnSpots,
+    };
+    final maxX = uniqueSpots.fold(1.0, (a, b) => a > b.x ? a : b.x);
+    final maxY = uniqueSpots.fold(1.0, (a, b) => a > b.y ? a : b.y);
+    final maxXDigits = (log(maxY) / log(10)).ceilToDouble() + 1;
 
     return Container(
       width: double.infinity,
@@ -520,7 +491,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Icon(Icons.circle, size: 14, color: Colors.green),
               const SizedBox(width: 4),
               Text(
-                "Completed",
+                "Purchase",
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -531,7 +502,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Icon(Icons.circle, size: 14, color: Colors.red),
               const SizedBox(width: 4),
               Text(
-                "Canceled",
+                "Sale",
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: ColorsConstants.black,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Icon(Icons.circle, size: 14, color: Colors.blue),
+              const SizedBox(width: 4),
+              Text(
+                "Return",
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -541,123 +523,119 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.only(right: 16),
-            width: double.infinity,
-            height: 300,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (value) {
-                    if (horizontalSpacing == 0 ||
-                        value.round() % horizontalSpacing == 0) {
-                      return const FlLine(
-                        color: Colors.grey,
-                        strokeWidth: 1,
-                        dashArray: [5, 3],
-                      );
-                    } else {
-                      return const FlLine(strokeWidth: 0);
-                    }
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: (_transactions.length / 10).ceil().toDouble(),
-                      getTitlesWidget: (value, meta) {
-                        return SideTitleWidget(
-                          meta: meta,
-                          child: Text(
-                            _numFormat.format(value),
-                            style: GoogleFonts.poppins(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      },
+          _isLoading
+              ? Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Center(child: CircularProgressIndicator()),
+              )
+              : Container(
+                padding: const EdgeInsets.only(right: 16),
+                width: double.infinity,
+                height: 300,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      verticalInterval:
+                          (_transactions.length / 10).ceil().toDouble(),
                     ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 35,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        if (horizontalSpacing == 0 ||
-                            value.round() % horizontalSpacing == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              _numFormat.format(value),
-                              style: GoogleFonts.poppins(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                    titlesData: FlTitlesData(
+                      show: true,
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          interval:
+                              (_transactions.length / 10).ceil().toDouble(),
+                          getTitlesWidget: (value, meta) {
+                            return SideTitleWidget(
+                              meta: meta,
+                              child: Text(
+                                _numFormat.format(value),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                              textAlign: TextAlign.right,
-                            ),
-                          );
-                        } else {
-                          return SizedBox();
-                        }
-                      },
+                            );
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 5 + 11 * maxXDigits.toDouble(),
+                          getTitlesWidget: (value, meta) {
+                            return SideTitleWidget(
+                              meta: meta,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: Text(
+                                  _numFormat.format(value),
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border(
+                        left: BorderSide(color: Colors.black),
+                        bottom: BorderSide(color: Colors.black),
+                      ),
+                    ),
+                    minX: 1,
+                    maxX: maxX,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: purchaseSpots,
+                        color: Colors.lightGreen,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.lightGreen.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      LineChartBarData(
+                        spots: saleSpots,
+                        color: Colors.red,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.red.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      LineChartBarData(
+                        spots: returnSpots,
+                        color: Colors.blue,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.blue.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    left: BorderSide(color: Colors.black),
-                    bottom: BorderSide(color: Colors.black),
-                  ),
-                ),
-                minX: 1,
-                maxX:
-                    completedSpots.length > canceledSpots.length
-                        ? completedSpots.length.toDouble()
-                        : canceledSpots.length.toDouble(),
-                minY: 0,
-                maxY: max,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: completedSpots,
-                    color: Colors.lightGreen,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: Colors.lightGreen.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  LineChartBarData(
-                    spots: canceledSpots,
-                    color: Colors.red,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: Colors.red.withValues(alpha: 0.2),
-                    ),
-                  ),
-                ],
               ),
-            ),
-          ),
           const SizedBox(height: 14),
         ],
       ),
@@ -665,26 +643,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildProductStock() {
-    final min =
-        (_mostUsageProductStock.reduce(
-                  (a, b) => (a['stock'] ?? 0) < (b['stock'] ?? 0) ? a : b,
-                )['stock'] ??
-                0)
-            .toInt();
-    final isMutipleOfThree = min % 3 == 0 ? 1 : 0;
-    final productStockDecimalCount =
-        ((min.toString().length - isMutipleOfThree) / 3).floor() * 3;
+    final maxProductStock = _mostUsageProductStock.fold(
+      1,
+      (a, b) => a > b['stock']!.toInt() ? a : b['stock']!.toInt(),
+    );
+    final maxXDigits = (log(maxProductStock) / log(10)).ceilToDouble() + 1;
     final productStockSpots =
         _mostUsageProductStock
             .map(
               (data) => FlSpot(
-                data['day'] ?? 0,
-                data['stock'] ?? 0 / pow(10, productStockDecimalCount),
+                data['index']?.toDouble() ?? 0,
+                data['stock']?.toDouble() ?? 0,
               ),
             )
             .toList();
-    final max = productStockSpots.reduce((a, b) => a.y > b.y ? a : b).y;
-    final horizontalSpacing = (max / 7).round();
 
     return Container(
       width: double.infinity,
@@ -716,8 +688,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 TextSpan(
-                  text:
-                      '(Most Usage) ${pow(10, productStockDecimalCount) > 1 ? 'x ${_numFormat.format(pow(10, productStockDecimalCount))}' : ''}',
+                  text: '(Most Usage)',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
@@ -740,7 +711,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 TextSpan(
-                  text: _mostUsageProductName,
+                  text:
+                      _mostUsageProductName.isNotEmpty
+                          ? _mostUsageProductName
+                          : 'None',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
@@ -751,113 +725,103 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          Container(
-            padding: const EdgeInsets.only(right: 16),
-            width: double.infinity,
-            height: 300,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (value) {
-                    if (horizontalSpacing == 0 ||
-                        value.round() % horizontalSpacing == 0) {
-                      return const FlLine(
-                        color: Colors.grey,
-                        strokeWidth: 1,
-                        dashArray: [5, 3],
-                      );
-                    } else {
-                      return const FlLine(strokeWidth: 0);
-                    }
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval:
+          _isLoading
+              ? Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Center(child: CircularProgressIndicator()),
+              )
+              : Container(
+                padding: const EdgeInsets.only(right: 16),
+                width: double.infinity,
+                height: 300,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      verticalInterval:
                           (_mostUsageProductStock.length / 10)
                               .ceil()
                               .toDouble(),
-                      getTitlesWidget: (value, meta) {
-                        return SideTitleWidget(
-                          meta: meta,
-                          child: Text(
-                            _numFormat.format(value),
-                            style: GoogleFonts.poppins(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      },
                     ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 35,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        if (horizontalSpacing == 0 ||
-                            value.round() % horizontalSpacing == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              _numFormat.format(value),
-                              style: GoogleFonts.poppins(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.right,
-                            ),
-                          );
-                        } else {
-                          return SizedBox();
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    left: BorderSide(color: Colors.black),
-                    bottom: BorderSide(color: Colors.black),
-                  ),
-                ),
-                minX: 1,
-                maxX: productStockSpots.length.toDouble(),
-                minY: 0,
-                maxY: max,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: productStockSpots,
-                    color: Colors.lightBlue,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(
+                    titlesData: FlTitlesData(
                       show: true,
-                      color: Colors.lightBlue.withValues(alpha: 0.2),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          interval:
+                              (_mostUsageProductStock.length / 10)
+                                  .ceil()
+                                  .toDouble(),
+                          getTitlesWidget: (value, meta) {
+                            return SideTitleWidget(
+                              meta: meta,
+                              child: Text(
+                                _numFormat.format(value),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 5 + 11 * maxXDigits.toDouble(),
+                          getTitlesWidget: (value, meta) {
+                            return SideTitleWidget(
+                              meta: meta,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: Text(
+                                  _numFormat.format(value),
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border(
+                        left: BorderSide(color: Colors.black),
+                        bottom: BorderSide(color: Colors.black),
+                      ),
+                    ),
+                    minX: 1,
+                    maxX: productStockSpots.length.toDouble(),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: productStockSpots,
+                        color: Colors.lightBlue,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.lightBlue.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
           const SizedBox(height: 14),
         ],
       ),
@@ -896,10 +860,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
               value: _selectedDateRange,
               options: _optionsDateRange,
               onChanged: (String? selected) {
-                if (selected != null) {
-                  setState(() {
-                    _selectedDateRange = selected;
-                  });
+                if (!_isLoading && selected != null) {
+                  _selectedDateRange = selected;
+                  _fetchAllStatsData();
                 }
               },
             ),
